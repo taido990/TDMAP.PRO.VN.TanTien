@@ -1,0 +1,20 @@
+{
+  "name": "TDMAP_TanTien",
+  "short_name": "TDMAP_TanTien",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00c6a7",
+  "icons": [
+    {
+      "src": "app-icon.ico",
+      "sizes": "192x192",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "app-icon.ico",
+      "sizes": "512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}
