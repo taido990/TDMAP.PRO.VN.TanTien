@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>TDMAP.PRO.VN.TANTIEN</title>
-  <!-- 121026  -->
+  <!-- 121026v1  -->
 
   <!-- ICON HIỂN THỊ TRÊN TAB TRÌNH DUYỆT + KHI TẠO PHÍM TẮT NGOÀI MÀN HÌNH ĐIỆN THOẠI  -->
   <!-- Đặt file app-icon.ico cùng thư mục với index.html (và manifest.json) trên server  -->
@@ -1864,16 +1864,16 @@
   <!-- HỘP THOẠI: ĐÃ COPY THÔNG TIN THỬA - kèm nút chia sẻ luôn dữ liệu vừa copy qua Zalo -->
   <div id="copyInfoOverlay" class="modal-overlay">
     <div class="modal-box" style="max-width:320px;">
-      <div class="modal-header">📋 Đã copy thông tin thửa</div>
+      <div class="modal-header" id="copyInfoTitle">📋 Đã copy thông tin thửa</div>
       <div class="modal-body">
         <div id="copyInfoText"
-          style="background:#f2f7f6;border-radius:8px;padding:10px 12px;font-size:13px;color:#333;font-weight:700;word-break:break-word;line-height:1.5;">
+          style="-webkit-user-select:text;user-select:text;background:#f2f7f6;border-radius:8px;padding:10px 12px;font-size:13px;color:#333;font-weight:700;word-break:break-word;line-height:1.5;">
         </div>
       </div>
       <div class="modal-footer">
         <button class="modal-btn secondary" onclick="closeCopyInfoOverlay()">Đóng</button>
         <button class="modal-btn primary" style="background:#0068ff;"
-          onclick="closeCopyInfoOverlay(); shareParcelInfoZalo();">💬 Chia sẻ qua Zalo</button>
+          onclick="closeCopyInfoOverlay(); shareParcelInfoZalo();">💬 Gửi qua Zalo 0914869091</button>
       </div>
     </div>
   </div>
@@ -1881,6 +1881,61 @@
   <!-- MODAL: BẢN ĐỒ XÃ TÂN TIẾN (Google Drive) - bản triển khai riêng cho 1
        Xã duy nhất nên KHÔNG còn form chọn Tỉnh/Xã; chỉ hiện trạng thái quét/tải
        file và danh sách file (để mở lại bản cũ hơn nếu muốn) khi cần. -->
+  <!-- HỘP THOẠI: HƯỚNG DẪN DÁN THÔNG TIN THỬA VÀO KHUNG CHAT ZALO (có ảnh minh họa) -->
+  <div id="zaloGuideOverlay" class="modal-overlay">
+    <div class="modal-box" style="max-width:340px;">
+      <div class="modal-header" style="color:#0068ff;">💬 Gửi thông tin thửa qua Zalo</div>
+      <div class="modal-body" style="padding:12px 16px;">
+        <div id="zaloGuideCopied" style="background:#e8f2ff;border-radius:8px;padding:8px 10px;font-size:12.5px;margin-bottom:10px;">
+          ✅ Đã copy: <b id="zaloGuideText"></b>
+        </div>
+        <!-- Ảnh minh họa: màn hình chat Zalo, ngón tay nhấn giữ ô nhập tin, hiện nút "Dán" -->
+        <svg viewBox="0 0 280 230" width="100%" style="display:block;max-width:280px;margin:0 auto 10px;"
+          xmlns="http://www.w3.org/2000/svg" font-family="Arial, sans-serif">
+          <rect x="40" y="4" width="200" height="222" rx="18" fill="#222"/>
+          <rect x="48" y="12" width="184" height="206" rx="12" fill="#eef1f5"/>
+          <rect x="48" y="12" width="184" height="30" rx="12" fill="#0068ff"/>
+          <rect x="48" y="30" width="184" height="12" fill="#0068ff"/>
+          <text x="60" y="32" fill="#fff" font-size="11" font-weight="bold">‹  0914869091</text>
+          <rect x="60" y="54" width="110" height="22" rx="10" fill="#fff"/>
+          <text x="70" y="69" fill="#555" font-size="9">Xin chào!</text>
+          <rect x="48" y="186" width="184" height="32" fill="#fff"/>
+          <rect x="56" y="192" width="140" height="20" rx="10" fill="#f1f3f6" stroke="#ff5252" stroke-width="2"/>
+          <text x="66" y="206" fill="#999" font-size="9">Tin nhắn</text>
+          <circle cx="214" cy="202" r="9" fill="#0068ff"/>
+          <path d="M210 198 L219 202 L210 206 Z" fill="#fff"/>
+          <!-- bong bóng "Dán" -->
+          <rect x="72" y="148" width="72" height="28" rx="6" fill="#333"/>
+          <path d="M100 176 L108 184 L116 176 Z" fill="#333"/>
+          <text x="108" y="166" fill="#fff" font-size="12" font-weight="bold" text-anchor="middle">Dán</text>
+          <circle cx="108" cy="162" r="22" fill="none" stroke="#ffd600" stroke-width="2.5" stroke-dasharray="4 3"/>
+          <!-- ngón tay nhấn giữ -->
+          <circle cx="140" cy="202" r="13" fill="#ff5252" opacity="0.25"/>
+          <circle cx="140" cy="202" r="7" fill="#ff5252" opacity="0.5"/>
+          <path d="M136 204 C134 214 138 224 146 228 L170 228 C176 220 178 212 174 206 L160 200 L158 190 C157 184 149 184 148 190 L148 206 Z"
+            fill="#f5c9a5" stroke="#b07a52" stroke-width="1.5"/>
+          <!-- nhãn số bước -->
+          <circle cx="24" cy="202" r="11" fill="#ff5252"/><text x="24" y="206" fill="#fff" font-size="12" font-weight="bold" text-anchor="middle">2</text>
+          <line x1="35" y1="202" x2="54" y2="202" stroke="#ff5252" stroke-width="2"/>
+          <circle cx="24" cy="162" r="11" fill="#ffb300"/><text x="24" y="166" fill="#fff" font-size="12" font-weight="bold" text-anchor="middle">3</text>
+          <line x1="35" y1="162" x2="70" y2="162" stroke="#ffb300" stroke-width="2"/>
+          <circle cx="258" cy="202" r="11" fill="#0068ff"/><text x="258" y="206" fill="#fff" font-size="12" font-weight="bold" text-anchor="middle">4</text>
+          <line x1="247" y1="202" x2="225" y2="202" stroke="#0068ff" stroke-width="2"/>
+        </svg>
+        <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.6;">
+          <li>Bấm <b>"Mở Zalo"</b> bên dưới (nếu Zalo hiện trang cá nhân, bấm <b>"Nhắn tin"</b>).</li>
+          <li><b style="color:#ff5252;">Nhấn giữ</b> vào ô <b>"Tin nhắn"</b> khoảng 1 giây.</li>
+          <li>Chọn <b style="color:#e69a00;">"Dán"</b> - thông tin Tờ, Thửa sẽ hiện vào ô chat.</li>
+          <li>Bấm nút <b style="color:#0068ff;">Gửi ➤</b>.</li>
+        </ol>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" onclick="closeZaloGuide()">Đóng</button>
+        <button class="modal-btn primary" style="background:#0068ff;" onclick="openZaloChat()">💬 Mở Zalo</button>
+      </div>
+    </div>
+  </div>
+
   <div id="driveModalOverlay" class="modal-overlay">
     <div class="modal-box" style="max-width:380px;">
       <div class="modal-header"><svg width="18" height="18" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
@@ -3669,26 +3724,38 @@
 
     // Copy 1 chuỗi văn bản vào clipboard - dùng chung cho nút Copy VÀ dự phòng
     // của nút chia sẻ Zalo (khi trình duyệt không hỗ trợ Web Share API).
+    // Trả về true nếu copy được. Trên điện thoại (trình duyệt trong app Zalo/
+    // Facebook, iOS Safari, trang http...) Clipboard API thường CÓ nhưng bị từ
+    // chối -> phải thử tiếp cách textarea ẩn chứ không dừng ở lỗi.
+    // Chạy cách textarea (đồng bộ) TRƯỚC, ngay trong lượt bấm của người dùng - nếu
+    // để sau 1 lần await bị lỗi thì lượt bấm đã hết, execCommand sẽ không copy được.
     async function copyTextToClipboard(text) {
+      let ok = copyTextViaTextarea(text);
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        return;
+        try { await navigator.clipboard.writeText(text); ok = true; } catch (e) { /* giữ kết quả cách textarea */ }
       }
-      // Dự phòng cho trình duyệt/ngữ cảnh không có Clipboard API (vd http
-      // không an toàn, trình duyệt cũ) - dùng cách copy cũ qua textarea ẩn.
+      return ok;
+    }
+    function copyTextViaTextarea(text) {
       const ta = document.createElement('textarea');
       ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
+      ta.setAttribute('readonly', ''); // không bật bàn phím / không zoom trên điện thoại
+      ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;';
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      document.execCommand('copy');
+      ta.setSelectionRange(0, text.length); // iOS cần chọn theo vùng mới copy được
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
       document.body.removeChild(ta);
+      return ok;
     }
 
-    function openCopyInfoOverlay(text) {
+    function openCopyInfoOverlay(text, copied = true) {
       document.getElementById('copyInfoText').textContent = text;
+      document.getElementById('copyInfoTitle').textContent = copied
+        ? '📋 Đã copy thông tin thửa'
+        : '📋 Nhấn giữ dòng dưới để copy';
       document.getElementById('copyInfoOverlay').classList.add('show');
     }
     function closeCopyInfoOverlay() {
@@ -3698,12 +3765,11 @@
     async function copyParcelInfo() {
       if (!activeP) return;
       const text = buildParcelCopyText(activeP);
-      try {
-        await copyTextToClipboard(text);
-        openCopyInfoOverlay(text);
-      } catch (e) {
-        showStatus('Không sao chép được (trình duyệt chặn quyền clipboard)');
-      }
+      let copied = false;
+      try { copied = await copyTextToClipboard(text); } catch (e) { copied = false; }
+      // Luôn mở hộp thoại: nếu trình duyệt chặn copy, người dùng vẫn thấy nội dung
+      // để nhấn giữ tự copy, và vẫn bấm được nút Chia sẻ qua Zalo.
+      openCopyInfoOverlay(text, copied);
     }
 
     // Lazy-load html2canvas (chỉ tải khi thật sự cần - xem captureInfoCardFallback
@@ -3817,38 +3883,34 @@
       }
     }
 
-    // Chia sẻ thông tin thửa qua Zalo. "zalo://" ĐÃ KIỂM CHỨNG THỰC TẾ trên điện
-    // thoại KHÔNG mở được app (không phải scheme công khai Zalo đăng ký) - bỏ hẳn
-    // cách này. Cách ĐÚNG và THỰC SỰ chạy được, phân theo nền tảng:
-    //  - TRÊN ĐIỆN THOẠI (Android/iOS): dùng Web Share API (navigator.share) -
-    //    đây mới là cơ chế CHUẨN của hệ điều hành, và Zalo có đăng ký chính thức
-    //    làm 1 đích nhận "Share to..." trong khay chia sẻ Android/iOS -> khay hiện
-    //    ra sẽ CÓ Zalo để chọn, chia sẻ thẳng nội dung vào app luôn.
-    //  - TRÊN MÁY TÍNH (Windows/macOS): Web Share API (nếu có) trên desktop
-    //    thường KHÔNG liệt kê Zalo (đã xác nhận qua ảnh chụp thực tế - chỉ có
-    //    Outlook/Mail...) vì Zalo Desktop không đăng ký với khay chia sẻ của hệ
-    //    điều hành theo cách đó -> bỏ qua Web Share trên desktop, mở thẳng trang
-    //    https://zalo.me/ để người dùng tự mở app Zalo (hoặc đăng nhập Zalo Web)
-    //    rồi dán nội dung đã copy sẵn vào clipboard.
+    // Gửi thông tin thửa qua Zalo: mở THẲNG chat với ZALO_SUPPORT_PHONE qua link
+    // https://zalo.me/<sđt> (không qua khay chia sẻ "chọn Zalo"). Zalo KHÔNG cho
+    // web điền sẵn tin nhắn, nên nội dung Tờ/Thửa được copy sẵn vào clipboard để
+    // người dùng nhấn giữ khung chat -> Dán -> Gửi.
+    const ZALO_SUPPORT_PHONE = '0914869091';
     async function shareParcelInfoZalo() {
       if (!activeP) return;
       const text = buildParcelCopyText(activeP);
-      try { await copyTextToClipboard(text); } catch (e) { /* có thể đã copy sẵn từ nút Copy trước đó */ }
-
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-      if (isMobile && navigator.share) {
-        try {
-          await navigator.share({ title: 'TDMAP.PRO.VN', text });
-          return; // đã chia sẻ thẳng qua khay hệ thống (người dùng chọn Zalo trong đó) - xong
-        } catch (e) {
-          if (e && e.name === 'AbortError') return; // người dùng tự bấm huỷ khay chia sẻ - không làm gì thêm
-          // Lỗi khác (hiếm) -> rơi xuống phương án mở trang zalo.me bên dưới
-        }
-      }
-
-      window.open('https://zalo.me/', '_blank', 'noopener');
-      showAlert(`Đã copy thông tin thửa:\n${text}\n\nHãy mở Zalo và dán (Paste) vào cuộc trò chuyện muốn gửi.`);
+      const copied = await copyTextToClipboard(text).catch(() => false);
+      // Hiện hộp hướng dẫn có ảnh minh họa trước; Zalo chỉ mở khi người dùng bấm
+      // "Mở Zalo" (lượt bấm mới -> không bị trình duyệt chặn popup).
+      document.getElementById('zaloGuideText').textContent = text;
+      document.getElementById('zaloGuideCopied').firstChild.textContent =
+        copied ? '✅ Đã copy: ' : '⚠️ Chưa copy được, hãy ghi lại: ';
+      document.getElementById('zaloGuideOverlay').classList.add('show');
+    }
+    function closeZaloGuide() {
+      document.getElementById('zaloGuideOverlay').classList.remove('show');
+    }
+    function openZaloChat() {
+      closeZaloGuide();
+      // Copy lại 1 lần nữa trong lượt bấm này cho chắc chắn clipboard có nội dung
+      if (activeP) copyTextToClipboard(buildParcelCopyText(activeP)).catch(() => {});
+      const url = `https://zalo.me/${ZALO_SUPPORT_PHONE}`;
+      // Không dùng 'noopener' vì khi đó window.open luôn trả về null -> không biết popup có bị chặn không
+      const w = window.open(url, '_blank');
+      if (w) w.opener = null;
+      else location.href = url; // trình duyệt chặn popup -> chuyển thẳng sang link Zalo
     }
 
     map.on('click', e => {
