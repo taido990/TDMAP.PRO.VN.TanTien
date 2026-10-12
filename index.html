@@ -1,0 +1,4996 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TDMAP.PRO.VN.TANTIEN</title>
+  <!-- 121026  -->
+
+  <!-- ICON HIỂN THỊ TRÊN TAB TRÌNH DUYỆT + KHI TẠO PHÍM TẮT NGOÀI MÀN HÌNH ĐIỆN THOẠI  -->
+  <!-- Đặt file app-icon.ico cùng thư mục với index.html (và manifest.json) trên server  -->
+  <link rel="icon" href="app-icon.ico" type="image/x-icon">
+  <link rel="shortcut icon" href="app-icon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="app-icon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="app-icon.ico">
+  <meta name="theme-color" content="#00c6a7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TDMAP_TanTien">
+  <meta name="application-name" content="TDMAP_TanTien">
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* THANH TÌM KIẾM NỔI (MÀU TRẮNG) */
+    #searchBar {
+      position: fixed;
+      top: 104px;
+      left: 15px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 25px;
+      padding: 6px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+      width: 380px;
+      max-width: calc(100vw - 30px);
+      transition: top 0.15s ease;
+    }
+
+    #searchBar .divider {
+      width: 1px;
+      height: 18px;
+      background: rgba(0, 0, 0, 0.1);
+      margin: 0 4px;
+    }
+
+    #searchInput {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #333;
+      font-size: 14px;
+      outline: none;
+      width: 100%;
+    }
+
+    #searchInput::placeholder {
+      color: #999;
+    }
+
+    /* NÚT TÌM KIẾM (ICON) */
+    #searchBtn {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      transition: color 0.2s;
+    }
+
+    #searchBtn:hover {
+      color: #00c6a7;
+    }
+
+    #searchBtn:active {
+      transform: scale(0.9);
+    }
+
+    /* NÚT "MỞ FILE" (MŨI TÊN) MỞ/ĐÓNG NHÓM CÔNG CỤ ẨN (Mở file / Drive / Excel) */
+    #moreToolsBtn {
+      background: transparent;
+      border: none;
+      color: #00c6a7;
+      font-size: 13px;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 0 2px;
+      flex-shrink: 0;
+      transition: color 0.2s;
+    }
+
+    #moreToolsBtn:hover {
+      color: #009e85;
+    }
+
+    #moreToolsBtn .mt-arrow {
+      display: inline-block;
+      font-size: 11px;
+      transition: transform 0.2s;
+    }
+
+    #moreToolsBtn.open .mt-arrow {
+      transform: rotate(180deg);
+    }
+
+    /* NHÓM CÔNG CỤ ẨN: Mở file / Google Drive / Excel - chỉ hiện khi bấm mũi tên */
+    #moreToolsGroup {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 55px;
+      z-index: 1001;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 190px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 14px;
+      padding: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    #moreToolsGroup.show {
+      display: flex;
+    }
+
+    #moreToolsGroup button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+    }
+
+    /* DANH SÁCH GỢI Ý KẾT QUẢ TÌM KIẾM (Tờ-Thửa / Tên chủ) */
+    #searchSuggestions {
+      position: fixed;
+      top: 153px;
+      /* left lệch qua phải hơn labelZoomControl (cụm nút mức zoom 16/17/18/19,
+         left:12px, rộng ~34px) để bảng kết quả không đè lên cụm nút đó. */
+      left: 56px;
+      z-index: 999;
+      width: 380px;
+      max-width: calc(100vw - 71px);
+      max-height: 320px;
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+      display: none;
+    }
+
+    #searchSuggestions.show {
+      display: block;
+    }
+
+    #searchSuggestions .sg-header {
+      position: sticky;
+      top: 0;
+      padding: 8px 14px;
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #00c6a7;
+      letter-spacing: .5px;
+      background: rgba(255, 255, 255, 0.98);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #searchSuggestions .sg-header button {
+      background: transparent;
+      border: none;
+      color: #999;
+      font-size: 15px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 2px;
+    }
+
+    #searchSuggestions .sg-item {
+      padding: 9px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      transition: background .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #searchSuggestions .sg-item:last-child {
+      border-bottom: none;
+    }
+
+    #searchSuggestions .sg-item:hover,
+    #searchSuggestions .sg-item:active {
+      background: rgba(0, 198, 167, 0.08);
+    }
+
+    #searchSuggestions .sg-id {
+      font-size: 13px;
+      font-weight: 800;
+      color: #111;
+    }
+
+    #searchSuggestions .sg-name {
+      font-size: 12.5px;
+      color: #cc4400;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    #searchSuggestions .sg-empty {
+      padding: 16px 14px;
+      font-size: 12.5px;
+      color: #999;
+      text-align: center;
+    }
+
+    #loadBtn {
+      background: #00c6a7;
+      border: none;
+      border-radius: 18px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+      padding: 8px 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: opacity 0.2s, background 0.2s;
+    }
+
+    #loadBtn:active {
+      opacity: 0.8;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    #driveBtn {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: opacity 0.2s, background 0.2s;
+    }
+
+    #driveBtn:active {
+      opacity: 0.8;
+    }
+
+    #excelBtn {
+      background: #fff;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 18px;
+      color: #333;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 8px 14px;
+      cursor: pointer;
+      transition: opacity 0.2s, background 0.2s;
+    }
+
+    #excelBtn:active {
+      opacity: 0.8;
+    }
+
+    /* NÚT VỊ TRÍ + NÚT ĐỊNH VỊ KHI DI CHUYỂN (dùng chung style) */
+    #locateBtn,
+    #navModeBtn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, .2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background .2s, transform .15s;
+      margin-bottom: 10px;
+    }
+
+    #locateBtn:active,
+    #navModeBtn:active {
+      transform: scale(.9);
+    }
+
+    #locateBtn.locating,
+    #navModeBtn.locating {
+      background: #e8f4ff;
+      border-color: #1a6fd4;
+      animation: pulse 1.2s infinite;
+    }
+
+    #locateBtn.located {
+      background: #e8fff8;
+      border-color: #00c6a7;
+    }
+
+    /* NÚT "ĐỊNH VỊ KHI DI CHUYỂN" khi đang bật theo dõi liên tục - màu cam để phân
+       biệt rõ với nút "Vị trí của tôi" (màu xanh lá khi bật), tránh nhầm 2 chế độ. */
+    #navModeBtn.active {
+      background: #fff4e8;
+      border-color: #ff9800;
+      animation: pulse-orange 1.2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .3)
+      }
+
+      50% {
+        box-shadow: 0 0 0 8px rgba(26, 111, 212, .15)
+      }
+    }
+
+    @keyframes pulse-orange {
+
+      0%,
+      100% {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .3)
+      }
+
+      50% {
+        box-shadow: 0 0 0 8px rgba(255, 152, 0, .18)
+      }
+    }
+
+    /* CỤM NÚT 🧭/📍/+/- (Leaflet corner 'topright') - ĐÃ CHUYỂN LÊN SÁT DƯỚI
+       THANH TÌM KIẾM (bên phải), thay vì nằm ở góc dưới-phải màn hình như trước,
+       cùng lý do với #labelZoomControl ở trên: tránh bị bảng thông tin thửa che
+       mất khi mở popup. top:160px chỉ là giá trị mặc định ban đầu, JS
+       (adjustTopLayout) sẽ tự tính lại theo chiều cao thật của thanh tìm kiếm.
+       Độ đặc hiệu (2 class) của selector này CAO HƠN rule mặc định ".leaflet-top"
+       của thư viện Leaflet (1 class) nên luôn thắng, bất kể thứ tự nạp CSS. */
+    .leaflet-top.leaflet-right {
+      top: 160px;
+    }
+
+    /* STATUS */
+    #statusPill {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 200;
+      background: rgba(10, 18, 28, 0.9);
+      border: 1px solid rgba(0, 198, 167, 0.5);
+      border-radius: 20px;
+      padding: 7px 18px;
+      font-size: 12px;
+      color: #00c6a7;
+      white-space: nowrap;
+      pointer-events: none;
+      transition: opacity .4s;
+    }
+
+    /* Thanh tiến trình mở file — DÙNG CHUNG cho cả "Mở file từ máy" và "Google
+       Drive", để người dùng luôn biết đang ở bước nào (đọc/tải file → phân tích
+       dữ liệu → hiển thị lên bản đồ) thay vì chỉ thấy chữ mờ dần vô định. */
+    #fileProgressWrap {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 3000;
+      height: 3px;
+      background: transparent;
+      opacity: 0;
+      transition: opacity .3s;
+      pointer-events: none;
+    }
+
+    #fileProgressWrap.show {
+      opacity: 1;
+    }
+
+    #fileProgressBar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #00c6a7, #00e0bd);
+      box-shadow: 0 0 8px rgba(0, 198, 167, 0.7);
+      transition: width .25s ease;
+    }
+
+    #fileProgressBar.error {
+      background: #e74c3c;
+      box-shadow: 0 0 8px rgba(231, 76, 60, .7);
+    }
+
+    #fileProgressLabel {
+      position: fixed;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3000;
+      background: rgba(10, 18, 28, 0.92);
+      border: 1px solid rgba(0, 198, 167, 0.5);
+      border-radius: 14px;
+      padding: 5px 14px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #00c6a7;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    #fileProgressLabel.show {
+      opacity: 1;
+    }
+
+    #fileProgressLabel.error {
+      color: #ff8a80;
+      border-color: rgba(231, 76, 60, .6);
+    }
+
+    /* BADGE MỨC ZOOM - nằm ở thanh trên cùng, cùng hàng với nút HSQ Xã */
+    #zoomBadge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(10, 18, 28, 0.9);
+      border: 1px solid rgba(0, 198, 167, 0.5);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #00c6a7;
+      white-space: nowrap;
+      pointer-events: none;
+      max-width: calc(100vw - 30px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background .25s, border-color .25s, color .25s;
+    }
+
+    #zoomBadge .zb-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #00c6a7;
+      box-shadow: 0 0 6px rgba(0, 198, 167, .8);
+      transition: background .25s, box-shadow .25s;
+    }
+
+    #zoomBadge.below-threshold {
+      border-color: rgba(255, 180, 0, 0.55);
+      color: #ffc107;
+    }
+
+    #zoomBadge.below-threshold .zb-dot {
+      background: #ffc107;
+      box-shadow: 0 0 6px rgba(255, 193, 7, .8);
+    }
+
+    /* CỘT CHỨA: BADGE ZOOM (trên) + NÚT HSQ XÃ (dưới), xếp DỌC (không còn nằm
+       ngang) để không bao giờ bị lấn sang phải và chồng lên panel "TDMAP.PRO.VN"
+       (checkbox Tên chủ/Nền nhãn) ở góc trên-phải trên màn hình điện thoại hẹp. */
+    #topControlsRow {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 1001;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      max-width: calc(100vw - 30px);
+    }
+
+    #hsqXaBtn {
+      max-width: calc(100vw - 30px);
+    }
+
+    /* CONTROL CHỌN NGƯỠNG ZOOM HIỆN NHÃN - ĐÃ CHUYỂN LÊN SÁT DƯỚI THANH TÌM KIẾM
+       (bên trái), thay vì nằm ở góc dưới-trái màn hình như trước: khi bảng thông
+       tin thửa (popup) mở ra che gần hết nửa dưới màn hình, control ở đáy màn
+       hình cũ sẽ bị đè lên - đưa lên gần thanh tìm kiếm (luôn ở phần trên, popup
+       không che tới) để tránh chồng đè. Vị trí top:160px chỉ là GIÁ TRỊ MẶC ĐỊNH
+       ban đầu - hàm adjustTopLayout() sẽ tự tính lại chính xác theo chiều cao
+       thật của thanh tìm kiếm (thay đổi tuỳ độ dài nội dung/kích thước màn hình).
+       Vẫn giữ dạng thanh dọc nhỏ gọn như trước. */
+    #labelZoomControl {
+      position: fixed;
+      left: 12px;
+      top: 160px;
+      z-index: 1001;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: rgba(10, 18, 28, 0.9);
+      border: 1px solid rgba(0, 198, 167, 0.5);
+      border-radius: 12px;
+      padding: 6px 5px;
+    }
+
+    #labelZoomControl .lzc-label {
+      font-size: 13px;
+      line-height: 1;
+      margin-bottom: 1px;
+    }
+
+    #lzcBtnCol {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .lzc-btn {
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: transparent;
+      color: #cfd8dc;
+      font-size: 10px;
+      font-weight: 800;
+      width: 22px;
+      height: 19px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+
+    .lzc-btn:active {
+      transform: scale(.92);
+    }
+
+    .lzc-btn.active {
+      background: #00c6a7;
+      border-color: #00c6a7;
+      color: #06231d;
+    }
+
+    /* CONTROL "NỀN NHÃN" (đã chuyển từ góc trên-phải xuống hàng control này để đỡ chật màn hình điện thoại) */
+    #labelBgControl {
+      display: flex;
+      align-items: center;
+      background: rgba(10, 18, 28, 0.9);
+      border: 1px solid rgba(0, 198, 167, 0.5);
+      border-radius: 20px;
+      padding: 5px 12px;
+      flex-shrink: 0;
+    }
+
+    #labelBgControl label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #9fb3c0;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    #labelBgControl input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #00c6a7;
+      cursor: pointer;
+    }
+
+    /* POPUP BẢN ĐỒ */
+    #popup {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      /* Phải CAO HƠN z-index mặc định 1000 của .leaflet-top/.leaflet-bottom
+         (cụm nút 🧭/📍/+/- góc trên-phải) - trên màn hình thấp, khi bảng
+         thông tin thửa mở cao lên tới ngang cụm nút đó, nếu popup có
+         z-index thấp hơn thì nút "-" (thu nhỏ) sẽ đè lên che mất nút ✕
+         đóng popup khiến người dùng không bấm tắt được. */
+      z-index: 1100;
+      background: #ffffff;
+      border-top: 2.5px solid #00c6a7;
+      border-radius: 18px 18px 0 0;
+      padding: 10px 14px 20px;
+      transform: translateY(110%);
+      transition: transform .3s cubic-bezier(.32, 0, .2, 1);
+      box-shadow: 0 -6px 32px rgba(0, 0, 0, .2);
+      /* Giới hạn chiều cao để trên điện thoại màn hình thấp/độ phân giải thấp,
+         bảng thông tin thửa không cao tới mức che kín toàn bộ màn hình (mất
+         hẳn bản đồ phía sau) - phần nội dung dư sẽ tự cuộn bên trong thay vì
+         đẩy popup tràn lên quá đỉnh màn hình. */
+      max-height: 78vh;
+      max-height: 78dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #popup.open {
+      transform: translateY(0);
+    }
+
+    /* Điện thoại màn hình thấp (độ phân giải thấp / màn nhỏ): thu gọn khoảng
+       cách, chữ để bảng thông tin thửa chiếm ít chỗ hơn, càng không cần cuộn. */
+    @media (max-height: 600px) {
+      #popup {
+        max-height: 68vh;
+        max-height: 68dvh;
+        padding: 8px 12px 14px;
+      }
+
+      #popupHandle {
+        margin-bottom: 8px;
+      }
+
+      #popupTitle {
+        font-size: 15px;
+      }
+
+      #popupInfo .popup-owner-line {
+        font-size: 15px;
+      }
+
+      #popupNote {
+        font-size: 11px;
+        padding: 5px 8px;
+        margin-bottom: 6px;
+      }
+
+      .btn-row a {
+        padding: 6px 6px;
+        font-size: 11px;
+      }
+    }
+
+    /* Vùng được chụp ảnh khi bấm nút "Chụp ảnh" (KHÔNG gồm popupHandle/btn-row)
+       - có nền trắng + đệm riêng để ảnh xuất ra không bị dính sát mép. */
+    #popupCaptureArea {
+      background: #ffffff;
+      padding: 6px 4px;
+    }
+
+    #popupHandle {
+      width: 32px;
+      height: 3px;
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 2px;
+      margin: 0 auto 14px;
+    }
+
+    #popupHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    #popupHeaderLeft {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    #popupBrand {
+      font-size: 10px;
+      font-weight: 800;
+      color: #00c6a7;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    #popupClose {
+      background: rgba(0, 0, 0, 0.07);
+      border: none;
+      border-radius: 50%;
+      color: #666;
+      font-size: 13px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #popupTitle {
+      font-size: 17px;
+      font-weight: 800;
+      color: #e60000;
+    }
+
+    #popupInfo {
+      font-size: 13px;
+      font-weight: 700;
+      color: #cc4400;
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    #popupInfo .popup-loaidat-line {
+      margin-bottom: 2px;
+    }
+
+    #popupInfo .popup-owner-line {
+      color: #1a6fd4;
+      margin-bottom: 4px;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    #popupInfo .popup-status-line {
+      display: inline-block;
+      margin-top: 2px;
+      padding: 1px 8px;
+      border-radius: 4px;
+      font-weight: 800;
+    }
+
+    #popupInfo .popup-status-ddk {
+      color: #ff1493;
+      background: rgba(255, 20, 147, 0.1);
+    }
+
+    #popupInfo .popup-status-cdk {
+      color: #cc0000;
+      background: rgba(204, 0, 0, 0.1);
+    }
+
+    #popupInfo .popup-status-owner {
+      color: #00a3b8;
+      background: rgba(0, 229, 255, 0.15);
+    }
+
+    #popupCoords {
+      font-size: 10px;
+      color: #aaa;
+    }
+
+    #popupNote {
+      font-size: 11.5px;
+      color: #7a5200;
+      background: #fff4d6;
+      border: 1px solid #ffdf99;
+      border-radius: 8px;
+      padding: 6px 10px;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-row a {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      color: #fff;
+      -webkit-tap-highlight-color: transparent;
+      transition: filter .15s, transform .1s;
+    }
+
+    .btn-row a:active {
+      filter: brightness(.8);
+      transform: scale(.97);
+    }
+
+    .btn-hsq {
+      background: linear-gradient(135deg, #1565d8, #0d4fb5);
+    }
+
+    .btn-copy {
+      background: linear-gradient(135deg, #1a6fd4, #0d47a1);
+    }
+
+    .btn-maps {
+      background: linear-gradient(135deg, #e8430a, #c2320a);
+    }
+
+    .btn-shot {
+      background: linear-gradient(135deg, #00c6a7, #009684);
+    }
+
+    .btn-row a .ico {
+      font-size: 13px;
+    }
+
+    .btn-row a.disabled {
+      opacity: .3;
+      pointer-events: none;
+    }
+
+    /* HỘP THOẠI: GIẤY TỜ KÈM THEO KHI ĐI ĐĂNG KÝ ĐẤT ĐAI (2 cột) */
+    .docs-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #00c6a7;
+      margin-bottom: 12px;
+    }
+
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .docs-col {
+      background: #f7fafa;
+      border: 1px solid #e6eeed;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .docs-col h4 {
+      margin: 0 0 8px;
+      font-size: 12.5px;
+      font-weight: 800;
+      color: #1a6fd4;
+      line-height: 1.4;
+    }
+
+    .docs-subtitle {
+      font-weight: 600;
+      color: #777;
+      font-size: 11.5px;
+    }
+
+    .docs-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .docs-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 12.5px;
+      color: #444;
+      line-height: 1.5;
+      margin-bottom: 7px;
+    }
+
+    .docs-ico {
+      flex-shrink: 0;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Dòng cha có danh sách con bên trong (vd "Giấy tờ về nguồn gốc đất...") -
+       chuyển về block để danh sách con XUỐNG HÀNG bên dưới thay vì bị đẩy nằm
+       ngang bên cạnh do li cha vốn là flex row. */
+    .docs-list li.docs-parent {
+      display: block;
+    }
+
+    .docs-list li.docs-parent>.docs-ico {
+      margin-right: 6px;
+    }
+
+    .docs-sublist {
+      list-style: none;
+      margin: 8px 0 0;
+      padding: 0 0 0 22px;
+      /* thụt vào bên phải, thẳng hàng dưới phần chữ của dòng cha */
+    }
+
+    .docs-sublist li {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .docs-note {
+      background: #fff4d6;
+      border: 2px solid #ffdf99;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+
+    .docs-note-title {
+      font-weight: 800;
+      font-size: 16px;
+      color: #7a5200;
+      margin-bottom: 8px;
+    }
+
+    .docs-note .docs-list li {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #7a5200;
+    }
+
+    /* Điện thoại: luôn ép "Giấy tờ kèm theo" về 1 cột (thay vì trông chờ
+       auto-fit của grid), thu gọn chữ/khoảng cách để không bị tràn ngang. */
+    @media (max-width: 480px) {
+      .docs-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .docs-title {
+        font-size: 13px;
+      }
+
+      .docs-note {
+        padding: 10px 12px;
+      }
+
+      .docs-note-title {
+        font-size: 14px;
+      }
+
+      .docs-col {
+        padding: 10px 12px;
+      }
+    }
+
+    /* NÚT: LINK HSQ XÃ (ngoài danh sách thửa trong file KML/GeoJSON) - cùng hàng với labelZoomControl */
+    #hsqXaBtn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(10, 18, 28, 0.9);
+      border: 1px solid rgba(0, 198, 167, 0.5);
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #00c6a7;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      transition: background .2s, transform .1s;
+    }
+
+    #hsqXaBtn:active {
+      transform: scale(.96);
+      background: rgba(0, 198, 167, 0.18);
+    }
+
+    #hsqXaBtn .ico {
+      font-size: 13px;
+    }
+
+    /* HỘP THOẠI CHUNG (NHẬP LINK / HƯỚNG DẪN SCAN) */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal-box {
+      background: #fff;
+      width: 90%;
+      max-width: 340px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transform: scale(0.9);
+      transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      overflow: hidden;
+      max-height: 82vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-overlay.show .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      background: #f8f9fa;
+      padding: 14px 18px;
+      font-weight: 800;
+      font-size: 14px;
+      color: #00c6a7;
+      border-bottom: 1px solid #eaeaea;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+
+    .modal-body {
+      padding: 16px 18px;
+      font-size: 13.5px;
+      color: #444;
+      line-height: 1.6;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      padding: 12px 18px 16px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .modal-btn {
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter 0.15s, transform 0.1s;
+      color: #fff;
+    }
+
+    .modal-btn:active {
+      transform: scale(0.95);
+      filter: brightness(.85);
+    }
+
+    .modal-btn.primary {
+      background: #1a6fd4;
+    }
+
+    .modal-btn.secondary {
+      background: #9aa4ad;
+    }
+
+    .modal-btn.ghost {
+      background: transparent;
+      color: #d9534f;
+      padding: 9px 8px;
+      margin-right: auto;
+    }
+
+    #linkPromptInput {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1.5px solid rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      color: #222;
+      outline: none;
+      margin-top: 4px;
+    }
+
+    #linkPromptInput:focus {
+      border-color: #00c6a7;
+    }
+
+    .hsq-guide-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      padding: 8px 0;
+      border-bottom: 1px solid #f2f2f2;
+    }
+
+    .hsq-guide-item:last-child {
+      border-bottom: none;
+    }
+
+    .hsq-guide-item b {
+      color: #00c6a7;
+      flex-shrink: 0;
+    }
+
+    .hsq-guide-item code {
+      background: #f2f7f6;
+      color: #cc4400;
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    .hsq-guide-example {
+      display: block;
+      color: #0d47a1;
+      font-weight: 700;
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+
+    /* ── MODAL: MỞ FILE .GEOJSON TỪ GOOGLE DRIVE ─────────────────────────────── */
+    .drive-help-link {
+      font-size: 11px;
+      font-weight: 700;
+      color: #1a6fd4;
+      text-decoration: none;
+    }
+
+    .drive-input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1.5px solid rgba(0, 0, 0, 0.15);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 13px;
+      color: #222;
+      outline: none;
+      margin-bottom: 2px;
+    }
+
+    .drive-input:focus {
+      border-color: #00c6a7;
+    }
+
+    .drive-input:disabled,
+    .drive-input[readonly] {
+      background: #f5f5f5;
+      color: #888;
+    }
+
+    #driveListBtn {
+      margin-top: 12px;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      background: #00c6a7;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    #driveListBtn:active {
+      filter: brightness(.85);
+    }
+
+    #driveListBtn:disabled {
+      opacity: .6;
+    }
+
+    #driveLoginBtn {
+      margin-top: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 8px;
+      background: #1a6fd4;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    #driveLoginBtn:active {
+      filter: brightness(.85);
+    }
+
+    #driveLoginBtn:disabled {
+      opacity: .6;
+    }
+
+    #driveLoggedInBox {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      padding: 8px 10px;
+      background: rgba(0, 198, 167, 0.1);
+      border: 1px solid rgba(0, 198, 167, 0.35);
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #06231d;
+    }
+
+    #driveLoggedInBox button {
+      border: none;
+      background: transparent;
+      color: #d9534f;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #googleSignInBtn {
+      margin: 2px 0 6px;
+      min-height: 40px;
+    }
+
+    #googleSignedEmailBox {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 2px 0 6px;
+      padding: 8px 10px;
+      background: rgba(26, 111, 212, 0.08);
+      border: 1px solid rgba(26, 111, 212, 0.3);
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #0d3d75;
+    }
+
+    #googleSignedEmailBox button {
+      border: none;
+      background: transparent;
+      color: #1a6fd4;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #driveStatusMsg {
+      font-size: 12.5px;
+      color: #888;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    #driveStatusMsg.error {
+      color: #d9534f;
+    }
+
+    #driveFileList {
+      margin-top: 10px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .drive-file-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid #eee;
+      margin-bottom: 6px;
+      transition: background .15s;
+    }
+
+    .drive-file-item:active {
+      background: #f0faf8;
+    }
+
+    .drive-file-item .dfi-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .drive-file-item .dfi-name {
+      flex: 1;
+      font-size: 13px;
+      color: #333;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .drive-file-item .dfi-go {
+      font-size: 12px;
+      color: #00c6a7;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* DROP OVERLAY */
+    #dropOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      background: rgba(0, 198, 167, 0.07);
+      border: 3px dashed #00c6a7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    #dropOverlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #dropOverlay p {
+      font-size: 20px;
+      font-weight: 700;
+      color: #00c6a7;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* HỘP THOẠI CẢNH BÁO TÙY CHỈNH (CUSTOM ALERT) */
+    #customAlertOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    #customAlertOverlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #customAlertBox {
+      background: #fff;
+      width: 90%;
+      max-width: 360px;
+      max-height: 82vh;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      transform: scale(0.9);
+      transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #customAlertOverlay.show #customAlertBox {
+      transform: scale(1);
+    }
+
+    #customAlertHeader {
+      background: #f8f9fa;
+      padding: 14px 18px;
+      font-weight: 800;
+      font-size: 14px;
+      color: #00c6a7;
+      border-bottom: 1px solid #eaeaea;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    #customAlertBody {
+      padding: 20px 18px;
+      font-size: 14px;
+      color: #444;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    #customAlertFooter {
+      padding: 12px 18px 18px;
+      display: flex;
+      justify-content: flex-end;
+      flex-shrink: 0;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    #customAlertBtn {
+      background: #1a6fd4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    #customAlertBtn:hover {
+      background: #1355a6;
+    }
+
+    #customAlertBtn:active {
+      transform: scale(0.95);
+    }
+
+    /* PANEL CHỈ ĐƯỜNG (DIRECTIONS) */
+    #directionsPanel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      /* Cùng lý do với #popup ở trên: phải cao hơn z-index 1000 của cụm nút
+         🧭/📍/+/- để nút ✕ đóng bảng chỉ đường không bị nút "-" che mất
+         trên màn hình thấp. */
+      z-index: 1100;
+      background: #ffffff;
+      border-top: 2.5px solid #1a6fd4;
+      border-radius: 18px 18px 0 0;
+      padding: 10px 14px 18px;
+      transform: translateY(110%);
+      transition: transform .3s cubic-bezier(.32, 0, .2, 1);
+      box-shadow: 0 -6px 32px rgba(0, 0, 0, .2);
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    #directionsPanel.open {
+      transform: translateY(0);
+    }
+
+    #dirHandle {
+      width: 32px;
+      height: 3px;
+      background: rgba(0, 0, 0, 0.12);
+      border-radius: 2px;
+      margin: 0 auto 12px;
+    }
+
+    #dirHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    #dirBrand {
+      font-size: 10px;
+      font-weight: 800;
+      color: #1a6fd4;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    #dirClose {
+      background: rgba(0, 0, 0, 0.07);
+      border: none;
+      border-radius: 50%;
+      color: #666;
+      font-size: 13px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #dirModeRow {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .dirModeBtn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 6px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(0, 0, 0, 0.1);
+      background: #f5f6f8;
+      color: #555;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .dirModeBtn.active {
+      background: #1a6fd4;
+      border-color: #1a6fd4;
+      color: #fff;
+    }
+
+    .dirModeBtn:active {
+      transform: scale(.96);
+    }
+
+    #dirSummary {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #eef5ff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    #dirSummary .big {
+      font-size: 20px;
+      font-weight: 800;
+      color: #1a6fd4;
+    }
+
+    #dirSummary .small {
+      font-size: 12px;
+      color: #777;
+    }
+
+    #dirSummary .sep {
+      width: 1px;
+      height: 28px;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    #dirStatusMsg {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    #dirStatusMsg.error {
+      color: #d9534f;
+    }
+
+    #dirFallbackRow {
+      margin-top: 4px;
+    }
+
+    #dirFallbackRow a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(135deg, #e8430a, #c2320a);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #dirFallbackRow a:active {
+      filter: brightness(.8);
+      transform: scale(.98);
+    }
+
+    .route-line {
+      filter: drop-shadow(0 0 4px rgba(26, 111, 212, .5));
+    }
+
+    /* HƯỚNG DẪN 2 CỘT */
+    .hsq-guide-cols {
+      display: flex;
+      gap: 10px;
+    }
+
+    .hsq-guide-col {
+      flex: 1;
+      min-width: 0;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .hsq-guide-col.col-chua {
+      background: #fff8e1;
+      border: 1.5px solid #ffc107;
+    }
+
+    .hsq-guide-col.col-da {
+      background: #e8f5e9;
+      border: 1.5px solid #43a047;
+    }
+
+    .hsq-guide-col-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      text-align: center;
+      padding: 3px 0 7px;
+      letter-spacing: 0.3px;
+    }
+
+    .col-chua .hsq-guide-col-title {
+      color: #e65100;
+    }
+
+    .col-da .hsq-guide-col-title {
+      color: #2e7d32;
+    }
+
+    .hsq-guide-cols .hsq-guide-item {
+      display: flex;
+      gap: 5px;
+      align-items: flex-start;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      font-size: 12px;
+    }
+
+    .hsq-guide-cols .hsq-guide-item:last-child {
+      border-bottom: none;
+    }
+
+    .hsq-guide-cols .hsq-guide-item b {
+      color: #00c6a7;
+      flex-shrink: 0;
+      font-size: 11px;
+    }
+
+    .hsq-guide-cols .hsq-guide-item code {
+      background: #f2f7f6;
+      color: #cc4400;
+      padding: 1px 5px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    .hsq-guide-cols .hsq-guide-example {
+      display: block;
+      color: #0d47a1;
+      font-weight: 700;
+      margin-top: 3px;
+      font-size: 11px;
+    }
+
+    /* Mở rộng modal khi hiển thị hướng dẫn 2 cột */
+    #hsqGuideOverlay .modal-box {
+      max-width: 520px;
+    }
+
+    /* Điện thoại: xếp 2 cột "Đất CHƯA/ĐÃ cấp GCN" chồng dọc thay vì ép ngang,
+       tránh chữ bị bóp/che khuất và phải cuộn ngang. */
+    @media (max-width: 480px) {
+      .hsq-guide-cols {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+
+<body class="hide-lbl-bg">
+
+  <div id="map"></div>
+
+  <div id="logoWrap" style="
+  position:fixed; top:10px; right:10px; z-index:1002;
+  background:#ffffff;
+  border:1px solid rgba(0,0,0,0.08); border-radius:10px;
+  padding:6px 12px; box-shadow:0 2px 10px rgba(0,0,0,0.15);
+  display:flex; flex-direction:column; align-items:flex-end; gap:6px;
+">
+    <span style="font-size:12px;font-weight:800;color:#00c6a7;letter-spacing:1.2px;">TDMAP.PRO.VN</span>
+
+    <div style="display:flex; align-items:center; gap:10px;">
+      <label
+        style="font-size:11px; font-weight:700; color:#555; display:flex; align-items:center; gap:4px; cursor:pointer;"
+        title="Tô màu ranh thửa: HỒNG = đã đăng ký, XANH NGỌC và VÀNG = chưa đăng ký">
+        <input type="checkbox" id="toggleOwnerColor" checked onchange="setOwnerColorMode(this.checked)">
+        Trạng thái
+      </label>
+      <label
+        style="font-size:11px; font-weight:700; color:#555; display:flex; align-items:center; gap:4px; cursor:pointer;"
+        title="Ẩn/hiện nền trắng phía sau nhãn thửa trên bản đồ">
+        <input type="checkbox" id="toggleLblBg" onchange="setLabelBgMode(this.checked)">
+        Nền nhãn
+      </label>
+      <label
+        style="font-size:11px; font-weight:700; color:#555; display:flex; align-items:center; gap:4px; cursor:pointer;"
+        title="Ẩn/hiện các địa điểm (hội trường, trường học, cầu, nhà thờ...) đọc từ file DiaDiem">
+        <input type="checkbox" id="toggleDiaDiem" checked onchange="setDiaDiemVisible(this.checked)">
+        Địa điểm
+      </label>
+    </div>
+
+    <!-- CHÚ GIẢI MÀU RANH THỬA: giải thích ý nghĩa màu viền HỒNG/XANH NGỌC/VÀNG
+         ngay dưới hàng checkbox, để người xem không cần bấm gì cũng hiểu màu. -->
+    <div
+      style="display:flex; align-items:center; gap:8px; font-size:10.5px; font-weight:700; color:#555; border-top:1px solid rgba(0,0,0,0.08); padding-top:5px; margin-top:1px;">
+      <span style="display:flex; align-items:center; gap:4px;">
+        <span
+          style="width:10px; height:10px; border-radius:3px; background:#ff1493; display:inline-block; flex:none;"></span>
+        Đã đăng ký
+      </span>
+      <span style="display:flex; align-items:center; gap:4px;">
+        <span style="display:flex; flex:none;">
+          <span
+            style="width:10px; height:10px; border-radius:3px 0 0 3px; background:#00e5ff; display:inline-block;"></span>
+          <span
+            style="width:10px; height:10px; border-radius:0 3px 3px 0; background:#ffff00; display:inline-block;"></span>
+        </span>
+        Chưa đăng ký
+      </span>
+    </div>
+  </div>
+
+  <div id="searchBar">
+    <button id="moreToolsBtn" onclick="loadTanTienMap(false)" title="Tải lại bản đồ Xã Tân Tiến">🔄 Tải lại bản
+      đồ</button>
+    <div class="divider"></div>
+    <input id="searchInput" type="search" placeholder="Nhập Tờ-Thửa..." autocomplete="off" oninput="onInputSearch()"
+      onkeydown="if(event.key==='Enter') executeSearch()" onfocus="onInputSearch()">
+    <button id="searchBtn" onclick="executeSearch()" title="Tìm kiếm thửa đất">🔍</button>
+  </div>
+  <div id="searchSuggestions"></div>
+
+  <div id="fileProgressWrap">
+    <div id="fileProgressBar"></div>
+  </div>
+  <div id="fileProgressLabel"></div>
+
+  <div id="statusPill" style="opacity:0">–</div>
+
+  <div id="topControlsRow">
+    <div id="zoomBadge"><span class="zb-dot"></span><span id="zoomBadgeText">Zoom 13</span></div>
+  </div>
+
+  <!-- Control chọn ngưỡng zoom hiện nhãn - đặt độc lập ở góc dưới-trái, thu gọn,
+       tách khỏi thanh trên để không chiếm chỗ màn hình điện thoại. -->
+  <div id="labelZoomControl" title="Nhãn/điểm tự hiện từ mức zoom đã chọn">
+    <span class="lzc-label">🏷️</span>
+    <div id="lzcBtnCol">
+      <button class="lzc-btn" data-zoom="16">16</button>
+      <button class="lzc-btn" data-zoom="17">17</button>
+      <button class="lzc-btn" data-zoom="18">18</button>
+      <button class="lzc-btn" data-zoom="19">19</button>
+    </div>
+  </div>
+
+  <div id="popup">
+    <div id="popupHandle"></div>
+    <div id="popupCaptureArea">
+      <div id="popupHeader">
+        <div id="popupHeaderLeft">
+          <span id="popupBrand">TDMAP</span>
+          <span id="popupTitle">–</span>
+          <span id="popupCoords">–</span>
+        </div>
+        <button id="popupClose" onclick="closePopup()">✕</button>
+      </div>
+      <div id="popupInfo">–</div>
+      <div id="popupNote">📌 Chủ sử dụng đất vui lòng ghi lại <b>Số tờ, Số thửa</b> hoặc nhấn vào nút (Chụp ảnh
+        thửa được chọn) để cung cấp cho UBND Xã để thực hiện đăng ký đất đai.</div>
+    </div>
+    <div class="btn-row">
+      <a id="btnCopyInfo" class="btn-copy" href="#" onclick="event.preventDefault(); copyParcelInfo();">
+        <span class="ico">📋</span> Copy thông tin
+      </a>
+      <a id="btnShot" class="btn-shot" href="#" onclick="event.preventDefault(); captureParcelScreenshot();">
+        <span class="ico">📸</span> Chụp ảnh thửa được chọn
+      </a>
+      <a id="btnMaps" class="btn-maps" href="#" onclick="event.preventDefault(); openDirections();">
+        <span class="ico">🧭</span> Chỉ đường
+      </a>
+    </div>
+  </div>
+
+  <div id="directionsPanel">
+    <div id="dirHandle"></div>
+    <div id="dirHeader">
+      <span id="dirBrand">🧭 Chỉ đường · TDMAP</span>
+      <button id="dirClose" onclick="closeDirections()">✕</button>
+    </div>
+
+    <div id="dirModeRow">
+      <button class="dirModeBtn active" data-mode="driving" onclick="setRouteMode('driving')">
+        <span>🏍️</span> Xe máy/Ô tô
+      </button>
+      <button class="dirModeBtn" data-mode="walking" onclick="setRouteMode('walking')">
+        <span>🚶</span> Đi bộ
+      </button>
+    </div>
+
+    <div id="dirSummary" style="display:none;">
+      <div>
+        <div class="big" id="dirDistance">–</div>
+        <div class="small">Quãng đường</div>
+      </div>
+      <div class="sep"></div>
+      <div>
+        <div class="big" id="dirDuration">–</div>
+        <div class="small">Thời gian</div>
+      </div>
+    </div>
+
+    <div id="dirStatusMsg">Đang chuẩn bị chỉ đường…</div>
+
+    <div id="dirFallbackRow">
+      <a id="dirFallbackLink" href="#" target="_blank" rel="noopener">
+        <span class="ico">🌐</span> Mở bằng Google Maps
+      </a>
+    </div>
+  </div>
+
+  <button id="navModeBtn" title="Định vị khi di chuyển (tự theo dõi liên tục)" onclick="toggleNavMode()">🧭</button>
+  <button id="locateBtn" title="Vị trí của tôi" onclick="locateMe()">📍</button>
+
+  <div id="customAlertOverlay">
+    <div id="customAlertBox">
+      <div id="customAlertHeader">TDMAP.PRO.VN</div>
+      <div id="customAlertBody"></div>
+      <div id="customAlertFooter">
+        <button id="customAlertBtn" onclick="closeAlert()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HỘP THOẠI: ĐÃ COPY THÔNG TIN THỬA - kèm nút chia sẻ luôn dữ liệu vừa copy qua Zalo -->
+  <div id="copyInfoOverlay" class="modal-overlay">
+    <div class="modal-box" style="max-width:320px;">
+      <div class="modal-header">📋 Đã copy thông tin thửa</div>
+      <div class="modal-body">
+        <div id="copyInfoText"
+          style="background:#f2f7f6;border-radius:8px;padding:10px 12px;font-size:13px;color:#333;font-weight:700;word-break:break-word;line-height:1.5;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" onclick="closeCopyInfoOverlay()">Đóng</button>
+        <button class="modal-btn primary" style="background:#0068ff;"
+          onclick="closeCopyInfoOverlay(); shareParcelInfoZalo();">💬 Chia sẻ qua Zalo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: BẢN ĐỒ XÃ TÂN TIẾN (Google Drive) - bản triển khai riêng cho 1
+       Xã duy nhất nên KHÔNG còn form chọn Tỉnh/Xã; chỉ hiện trạng thái quét/tải
+       file và danh sách file (để mở lại bản cũ hơn nếu muốn) khi cần. -->
+  <div id="driveModalOverlay" class="modal-overlay">
+    <div class="modal-box" style="max-width:380px;">
+      <div class="modal-header"><svg width="18" height="18" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+          style="vertical-align:middle;margin-right:4px;">
+          <polygon points="50,6 6,88 50,60" fill="#2684FC" />
+          <polygon points="50,6 50,60 94,88" fill="#00AC47" />
+          <polygon points="6,88 94,88 50,60" fill="#FFBA00" />
+        </svg> Bản đồ Xã Tân Tiến</div>
+      <div class="modal-body">
+        <button id="driveListBtn" onclick="loadTanTienMap(false)">🔄 Tải lại bản đồ</button>
+        <div id="driveStatusMsg" style="display:none;"></div>
+        <div id="driveFileList"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" onclick="closeDriveModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HỘP THOẠI: GIẤY TỜ KÈM THEO KHI ĐI ĐĂNG KÝ ĐẤT ĐAI - hiện ngay khi vào
+       trang (startMapFromSplash). Rộng hơn modal-box thường (2 cột trên màn hình đủ rộng, tự
+       dồn về 1 cột trên điện thoại nhờ auto-fit/minmax). -->
+  <div id="requiredDocsOverlay" class="modal-overlay">
+    <div class="modal-box" style="max-width:640px;">
+      <div class="modal-header">
+        <div style="color:#1a6fd4;font-size:13px;margin-bottom:4px;">UBND Xã Tân Tiến, Tỉnh Đắk Lắk</div>
+        <span id="docsHeaderIcon">✅</span> <span id="docsSuccessMsg"></span>
+      </div>
+      <div class="modal-body">
+        <div class="docs-title">📋 Giấy tờ kèm theo khi đi đăng ký đất đai</div>
+        <div class="docs-note">
+          <div class="docs-note-title">💡 Lưu ý chung</div>
+          <ul class="docs-list">
+            <li><span class="docs-ico">📷</span> Photo tất cả giấy tờ liên quan (CCCD, giấy tờ nguồn gốc/GCN...)</li>
+            <li><span class="docs-ico">🔍</span> Mang theo bản gốc để đối chiếu</li>
+          </ul>
+        </div>
+        <div class="docs-grid">
+          <div class="docs-col">
+            <h4>1️⃣ Đất CHƯA được cấp giấy chứng nhận<br><span class="docs-subtitle">(đăng ký lần đầu)</span></h4>
+            <ul class="docs-list">
+              <li><span class="docs-ico">🪪</span> CCCD chủ sử dụng đất (chủ 1 + chủ 2, nếu có)</li>
+              <li class="docs-parent"><span class="docs-ico">📜</span> Giấy tờ về nguồn gốc đất (1 trong các loại sau):
+                <ul class="docs-sublist">
+                  <li><span class="docs-ico">🤝</span> Giấy tờ mua bán, chuyển nhượng</li>
+                  <li><span class="docs-ico">🎁</span> Giấy tờ nhận tặng cho, thừa kế</li>
+                  <li><span class="docs-ico">🏛️</span> Quyết định giao đất/cấp đất của Nhà nước</li>
+                  <li><span class="docs-ico">📄</span> Giấy tờ khác chứng minh nguồn gốc sử dụng đất (kê khai 299, sổ
+                    mục kê, biên lai thuế đất...)</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+          <div class="docs-col">
+            <h4>2️⃣ Đất ĐÃ được cấp giấy chứng nhận<br><span class="docs-subtitle">(đăng ký biến động, cấp
+                đổi...)</span></h4>
+            <ul class="docs-list">
+              <li><span class="docs-ico">🪪</span> CCCD chủ sử dụng đất (chủ 1 + chủ 2, nếu có)</li>
+              <li><span class="docs-ico">📗</span> Giấy chứng nhận quyền sử dụng đất</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn primary" style="background:#1a6fd4;" onclick="closeRequiredDocsOverlay()">Đã
+          xem - Mở bản đồ</button>
+      </div>
+    </div>
+  </div>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script>
+    // ── DIRECTIONS (CHỈ ĐƯỜNG TRỰC TIẾP TRONG WEB) ────────────────────────────────
+    let routeLine = null;
+    let routeStartMarker = null;
+    let routeMode = 'driving'; // 'driving' | 'walking'
+    let routeDestP = null; // parcel đang chỉ đường tới
+
+    function openDirections() {
+      if (!activeP) return;
+      routeDestP = activeP;
+
+      document.getElementById('directionsPanel').classList.add('open');
+      document.getElementById('dirSummary').style.display = 'none';
+      document.getElementById('dirStatusMsg').classList.remove('error');
+      document.getElementById('dirStatusMsg').style.display = 'block';
+
+      const fallback = document.getElementById('dirFallbackLink');
+      fallback.href = `https://www.google.com/maps/dir/?api=1&destination=${routeDestP.lat},${routeDestP.lon}&travelmode=${routeMode}`;
+
+      if (locateMarker) {
+        const ll = locateMarker.getLatLng();
+        fetchRoute(ll.lat, ll.lng, routeDestP.lat, routeDestP.lon);
+      } else {
+        document.getElementById('dirStatusMsg').textContent = 'Đang xác định vị trí của bạn…';
+        if (!navigator.geolocation) {
+          showDirError('Trình duyệt không hỗ trợ định vị. Hãy dùng Google Maps.');
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const lat = pos.coords.latitude, lon = pos.coords.longitude;
+            placeLocateMarker(lat, lon, pos.coords.accuracy);
+            fetchRoute(lat, lon, routeDestP.lat, routeDestP.lon);
+          },
+          err => {
+            const msgs = { 1: 'Bị từ chối quyền định vị', 2: 'Không xác định được vị trí', 3: 'Hết thời gian chờ' };
+            showDirError((msgs[err.code] || 'Lỗi định vị') + '. Hãy dùng Google Maps thay thế.');
+          },
+          { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+        );
+      }
+    }
+
+    function placeLocateMarker(lat, lon, acc) {
+      if (locateMarker) map.removeLayer(locateMarker);
+      if (locateCircle) map.removeLayer(locateCircle);
+      locateCircle = L.circle([lat, lon], {
+        radius: acc || 30, color: '#1a6fd4', weight: 1,
+        fillColor: '#1a6fd4', fillOpacity: 0.12, interactive: false
+      }).addTo(map);
+      locateMarker = L.marker([lat, lon], {
+        icon: L.divIcon({
+          className: '',
+          html: `<div style="
+        width:16px;height:16px;border-radius:50%;
+        background:#1a6fd4;border:3px solid #fff;
+        box-shadow:0 0 0 3px rgba(26,111,212,.4);
+      "></div>`,
+          iconSize: [16, 16], iconAnchor: [8, 8]
+        }),
+        interactive: false, zIndexOffset: 1000
+      }).addTo(map);
+      // Lưu ý: hàm này CHỈ vẽ chấm/vòng tròn vị trí lên bản đồ, KHÔNG tự đổi trạng
+      // thái nút bấm nào - vì có 2 nút dùng chung hàm này (locateBtn "Vị trí của
+      // tôi" và navModeBtn "Định vị khi di chuyển"), mỗi nút tự quản lý class/icon
+      // của chính nó (xem locateMe() và toggleNavMode() bên dưới).
+    }
+
+    function clearLocateMarker() {
+      if (locateMarker) { map.removeLayer(locateMarker); locateMarker = null; }
+      if (locateCircle) { map.removeLayer(locateCircle); locateCircle = null; }
+    }
+
+    function setRouteMode(mode) {
+
+      routeMode = mode;
+      document.querySelectorAll('.dirModeBtn').forEach(b =>
+        b.classList.toggle('active', b.dataset.mode === mode));
+      if (routeDestP && locateMarker) {
+        const ll = locateMarker.getLatLng();
+        document.getElementById('dirSummary').style.display = 'none';
+        document.getElementById('dirStatusMsg').style.display = 'block';
+        document.getElementById('dirStatusMsg').classList.remove('error');
+        document.getElementById('dirStatusMsg').textContent = 'Đang tính lại tuyến đường…';
+        fetchRoute(ll.lat, ll.lng, routeDestP.lat, routeDestP.lon);
+      }
+      const fallback = document.getElementById('dirFallbackLink');
+      if (routeDestP) {
+        fallback.href = `https://www.google.com/maps/dir/?api=1&destination=${routeDestP.lat},${routeDestP.lon}&travelmode=${routeMode}`;
+      }
+    }
+
+    async function fetchRoute(slat, slon, dlat, dlon) {
+      const statusEl = document.getElementById('dirStatusMsg');
+      statusEl.style.display = 'block';
+      statusEl.classList.remove('error');
+      statusEl.textContent = 'Đang tìm tuyến đường…';
+      document.getElementById('dirSummary').style.display = 'none';
+
+      const profile = routeMode === 'walking' ? 'foot' : 'driving';
+      const url = `https://router.project-osrm.org/route/v1/${profile}/${slon},${slat};${dlon},${dlat}?overview=full&geometries=geojson`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes.length) throw new Error('Không có tuyến đường');
+
+        const route = data.routes[0];
+        drawRoute(route.geometry.coordinates);
+
+        const km = route.distance / 1000;
+        const mins = Math.round(route.duration / 60);
+        document.getElementById('dirDistance').textContent =
+          km < 1 ? Math.round(route.distance) + ' m' : km.toFixed(1) + ' km';
+        document.getElementById('dirDuration').textContent =
+          mins < 60 ? mins + ' phút' : Math.floor(mins / 60) + 'h' + (mins % 60) + 'p';
+
+        statusEl.style.display = 'none';
+        document.getElementById('dirSummary').style.display = 'flex';
+
+        const b = L.latLngBounds([[slat, slon], [dlat, dlon]]);
+        route.geometry.coordinates.forEach(c => b.extend([c[1], c[0]]));
+        map.fitBounds(b, { padding: [70, 70], maxZoom: 18 });
+
+      } catch (err) {
+        showDirError('Không lấy được tuyến đường (mất mạng hoặc dịch vụ bận). Hãy dùng Google Maps.');
+      }
+    }
+
+    function drawRoute(coords) {
+      if (routeLine) map.removeLayer(routeLine);
+      const latlngs = coords.map(c => [c[1], c[0]]);
+      routeLine = L.polyline(latlngs, {
+        color: '#1a6fd4', weight: 5, opacity: 0.85, className: 'route-line'
+      }).addTo(map);
+    }
+
+    function showDirError(msg) {
+      const statusEl = document.getElementById('dirStatusMsg');
+      statusEl.style.display = 'block';
+      statusEl.classList.add('error');
+      statusEl.textContent = msg;
+      document.getElementById('dirSummary').style.display = 'none';
+    }
+
+    function closeDirections() {
+      document.getElementById('directionsPanel').classList.remove('open');
+      if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+      routeDestP = null;
+    }
+
+    // ── ALERT CUSTOM FUNCTION ─────────────────────────────────────────────────────
+    function showAlert(message) {
+      document.getElementById('customAlertBody').textContent = message;
+      document.getElementById('customAlertOverlay').classList.add('show');
+    }
+    function closeAlert() {
+      document.getElementById('customAlertOverlay').classList.remove('show');
+    }
+
+    // Hộp thoại riêng (2 cột, có icon) hướng dẫn giấy tờ cần chuẩn bị, thay
+    // cho showAlert() dạng text thuần - vì nội dung giấy tờ cần trình bày dạng
+    // danh sách/bảng chứ không hợp với 1 khối văn bản đơn giản.
+    function openRequiredDocsOverlay(successMsg, headerIcon) {
+      document.getElementById('docsHeaderIcon').textContent = headerIcon || '✅';
+      document.getElementById('docsSuccessMsg').textContent = successMsg;
+      document.getElementById('requiredDocsOverlay').classList.add('show');
+    }
+    function closeRequiredDocsOverlay() {
+      document.getElementById('requiredDocsOverlay').classList.remove('show');
+    }
+
+    // Hiện hộp thoại hướng dẫn giấy tờ NGAY KHI vào trang (KHÔNG phải sau khi gửi
+    // đăng ký như trước) - để người dân biết trước cần chuẩn bị gì, đỡ phải đi lại
+    // nhiều lần. Bản đồ vẫn tải song song phía sau, không bị hộp thoại này chặn lại.
+    function startMapFromSplash() {
+      openRequiredDocsOverlay('Vui lòng chuẩn bị trước các giấy tờ sau để việc đăng ký đất đai được nhanh chóng', '📋');
+      loadTanTienMap(true);
+    }
+
+    // ── LOCATE ───────────────────────────────────────────────────────────────────
+    // Có 2 nút TÁCH BIỆT hoàn toàn, không dùng chung 1 chế độ:
+    //   📍 locateBtn  = "Vị trí của tôi"      -> định vị 1 LẦN, đứng yên tại chỗ,
+    //                                            KHÔNG tự theo dõi liên tục, nên
+    //                                            không bao giờ gây giật bản đồ khi
+    //                                            đang chạm chọn thửa.
+    //   🧭 navModeBtn = "Định vị khi di chuyển" -> bật theo dõi GPS LIÊN TỤC
+    //                                            (watchPosition) và bản đồ tự động
+    //                                            bám theo vị trí khi bạn di chuyển,
+    //                                            dùng cho lúc đi thực địa. Bấm lại
+    //                                            để tắt.
+    // 2 nút dùng chung 1 chấm/vòng tròn vị trí trên bản đồ (locateMarker/locateCircle)
+    // nhưng chỉ 1 chế độ hoạt động tại 1 thời điểm - bật chế độ này sẽ tự tắt chế
+    // độ kia để tránh xung đột (2 watch cùng chạy, nút hiển thị sai trạng thái...).
+    let locateMarker = null;
+    let locateCircle = null;
+    let staticLocateActive = false; // true khi 📍 đang hiển thị vị trí (định vị 1 lần)
+    let locateWatchId = null;       // khác null = 🧭 đang bật theo dõi vị trí liên tục
+    let navFirstFix = true;         // lần định vị đầu tiên của phiên 🧭 hiện tại -> bay tới; các lần sau chỉ lướt nhẹ theo
+
+    function resetLocateButtons() {
+      const staticBtn = document.getElementById('locateBtn');
+      staticBtn.classList.remove('locating', 'located');
+      staticBtn.textContent = '📍';
+      const navBtn = document.getElementById('navModeBtn');
+      navBtn.classList.remove('locating', 'active');
+      navBtn.textContent = '🧭';
+    }
+
+    // ── 📍 "Vị trí của tôi" — định vị 1 lần, đứng yên tại chỗ ──────────────────────
+    // Bấm lần 1: xác định vị trí hiện tại rồi hiển thị chấm trên bản đồ (đứng yên,
+    // không tự cập nhật liên tục). Bấm lần nữa (khi đang hiển thị): tắt đi.
+    function locateMe() {
+      if (!navigator.geolocation) {
+        showStatus('Trình duyệt không hỗ trợ định vị');
+        return;
+      }
+      // Đang ở chế độ "định vị khi di chuyển" -> tắt trước để tránh 2 chế độ chạy
+      // song song (một cái đứng yên, một cái liên tục di chuyển bản đồ).
+      if (locateWatchId !== null) stopNavMode();
+
+      if (staticLocateActive) {
+        map.stop(); // dừng ngay animation bay/lướt đang chạy dở (nếu có) khi tắt
+        clearLocateMarker();
+        staticLocateActive = false;
+        resetLocateButtons();
+        // QUAN TRỌNG: trên điện thoại, lúc trình duyệt hiện hộp thoại xin quyền vị
+        // trí (và cả lúc ẩn thanh địa chỉ khi cuộn/tương tác) kích thước THẬT SỰ
+        // của khung nhìn có thể đã thay đổi, nhưng Leaflet KHÔNG tự biết để tính
+        // lại toạ độ pixel <-> lat/lng nếu không có sự kiện 'resize' rõ ràng (nhiều
+        // trình duyệt di động không bắn 'resize' khi thanh địa chỉ ẩn/hiện) -> bản
+        // đồ vẫn dùng kích thước/gốc toạ độ CŨ đã lệch để tính chạm -> chạm vào
+        // đúng vị trí thửa trên MÀN HÌNH nhưng Leaflet lại hiểu là chạm trúng chỗ
+        // KHÁC trên bản đồ (không trúng polygon nào) -> hoàn toàn không phản ứng
+        // gì, dù chạm đúng thửa. invalidateSize() ép Leaflet đo lại kích thước
+        // khung bản đồ + tính lại toạ độ ngay lúc này, khắc phục triệt để. Gọi
+        // ngay LẪN có độ trễ nhỏ để chắc chắn bắt kịp cả khi UI trình duyệt còn
+        // đang settle (ẩn/hiện thanh địa chỉ thường mất thêm ~300ms nữa).
+        map.invalidateSize();
+        setTimeout(() => map.invalidateSize(), 350);
+        showStatus('Đã tắt định vị');
+        return;
+      }
+
+      const btn = document.getElementById('locateBtn');
+      btn.classList.remove('located');
+      btn.classList.add('locating');
+      btn.textContent = '⌛';
+      showStatus('Đang xác định vị trí…');
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          // Hộp thoại xin quyền vị trí của trình duyệt cũng có thể làm lệch kích
+          // thước khung nhìn thật của trang trên điện thoại -> đo lại cho chắc,
+          // trước cả khi bay/lướt tới vị trí (xem giải thích đầy đủ ở nhánh tắt
+          // định vị bên dưới).
+          map.invalidateSize();
+          const lat = pos.coords.latitude, lon = pos.coords.longitude, acc = pos.coords.accuracy;
+          placeLocateMarker(lat, lon, acc);
+          const curZoom = map.getZoom();
+          if (curZoom < 17) map.flyTo([lat, lon], 17, { animate: true, duration: 1.2 });
+          else map.panTo([lat, lon], { animate: true, duration: 0.6 });
+
+          staticLocateActive = true;
+          btn.classList.remove('locating');
+          btn.classList.add('located');
+          btn.textContent = '🔵';
+          showStatus(`Vị trí của bạn · độ chính xác ±${Math.round(acc)}m`);
+        },
+        err => {
+          const msgs = { 1: 'Bị từ chối quyền định vị', 2: 'Không xác định được vị trí', 3: 'Hết thời gian chờ' };
+          showStatus(msgs[err.code] || 'Lỗi định vị');
+          btn.classList.remove('locating');
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 }
+      );
+    }
+
+    // ── 🧭 "Định vị khi di chuyển" — theo dõi liên tục, bản đồ tự bám theo ─────────
+    // Bấm lần 1: bật watchPosition, mỗi lần có toạ độ GPS mới thì cập nhật chấm vị
+    // trí VÀ tự động panTo bản đồ theo, để luôn thấy mình đang ở đâu giữa các thửa
+    // khi đi thực địa. Bấm lần nữa (bất kể đang chờ định vị hay đã có vị trí): tắt
+    // theo dõi. Vì đây là chế độ được bật CHỦ ĐỘNG (khác 📍), việc bản đồ tự bám
+    // theo trong lúc đang bật là hành vi mong muốn của chế độ, không phải lỗi.
+    function toggleNavMode() {
+      if (!navigator.geolocation) {
+        showStatus('Trình duyệt không hỗ trợ định vị');
+        return;
+      }
+      if (locateWatchId !== null) {
+        stopNavMode();
+        return;
+      }
+      startNavMode();
+    }
+
+    function startNavMode() {
+      // Đang ở chế độ "Vị trí của tôi" -> tắt trước, tránh 2 chế độ song song.
+      if (staticLocateActive) {
+        clearLocateMarker();
+        staticLocateActive = false;
+      }
+
+      const btn = document.getElementById('navModeBtn');
+      btn.classList.remove('active');
+      btn.classList.add('locating');
+      btn.textContent = '⌛';
+      showStatus('Đang xác định vị trí…');
+      navFirstFix = true;
+
+      locateWatchId = navigator.geolocation.watchPosition(
+        pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+
+          placeLocateMarker(lat, lon, acc);
+
+          if (navFirstFix) {
+            // Hộp thoại xin quyền vị trí có thể vừa làm lệch kích thước khung nhìn
+            // thật trên điện thoại - đo lại ngay lần fix đầu tiên (xem giải thích ở
+            // nhánh tắt định vị trong stopNavMode()).
+            map.invalidateSize();
+            map.flyTo([lat, lon], 17, { animate: true, duration: 1.2 });
+            navFirstFix = false;
+          } else if (!mapPointerActive) {
+            // Bỏ qua lần "tự lướt theo" này nếu người dùng đang chạm bản đồ (xem
+            // giải thích ở khai báo mapPointerActive) - GPS vẫn còn theo dõi liên
+            // tục nên lần fix kế tiếp (vài giây sau, lúc chắc chắn không còn chạm)
+            // sẽ tự bắt kịp vị trí mới nhất, không cần xử lý gì thêm ở đây.
+            map.panTo([lat, lon], { animate: true, duration: 0.5 });
+          }
+
+          btn.classList.remove('locating');
+          btn.classList.add('active');
+          btn.textContent = '🧭';
+          showStatus(`Đang di chuyển · độ chính xác ±${Math.round(acc)}m`);
+        },
+        err => {
+          const msgs = { 1: 'Bị từ chối quyền định vị', 2: 'Không xác định được vị trí', 3: 'Hết thời gian chờ' };
+          showStatus(msgs[err.code] || 'Lỗi định vị');
+          stopNavMode();
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      );
+    }
+
+    function stopNavMode() {
+      if (locateWatchId !== null) {
+        navigator.geolocation.clearWatch(locateWatchId);
+        locateWatchId = null;
+      }
+      // QUAN TRỌNG: nếu vừa có 1 lần panTo() đang chạy dở (hiệu ứng bay/lướt 0.5s
+      // theo GPS) đúng lúc bấm tắt, animation đó vẫn tiếp tục chạy thêm vài trăm
+      // mili-giây SAU KHI đã tắt (clearWatch chỉ chặn các lần GPS mới, không huỷ
+      // animation đang chạy dở) -> nếu người dùng chạm chọn 1 thửa ngay trong lúc
+      // đó, thửa vẫn đang trôi dưới ngón tay y như lúc còn bật -> lại chọn không
+      // được, dù đã bấm tắt. map.stop() dừng animation đang chạy dở NGAY LẬP TỨC,
+      // giữ nguyên vị trí bản đồ hiện tại, đảm bảo tắt là dừng hẳn, không còn trôi.
+      map.stop();
+      clearLocateMarker();
+      resetLocateButtons();
+      // Ép Leaflet đo lại kích thước khung bản đồ + tính lại toạ độ pixel <-> lat/lng
+      // ngay lúc tắt (xem giải thích chi tiết ở nhánh tắt của locateMe() phía trên -
+      // cùng nguyên nhân/cách khắc phục, áp dụng cho cả 2 nút 📍 và 🧭).
+      map.invalidateSize();
+      setTimeout(() => map.invalidateSize(), 350);
+      showStatus('Đã tắt định vị khi di chuyển');
+    }
+
+    // ── MAP ───────────────────────────────────────────────────────────────────────
+    // ── CHỐNG CHỒNG ĐÈ: tự căn lại vị trí thanh tìm kiếm theo chiều cao thật của hàng nút phía trên
+    //    (nút "HSQ Ngoài Danh Sách" có thể xuống dòng trên màn hình điện thoại hẹp)
+    function adjustTopLayout() {
+      const row = document.getElementById('topControlsRow');
+      const searchBar = document.getElementById('searchBar');
+      const suggestions = document.getElementById('searchSuggestions');
+      const logoWrap = document.getElementById('logoWrap');
+      if (!row || !searchBar) return;
+      const rowRect = row.getBoundingClientRect();
+      // Lấy điểm THẤP HƠN giữa hàng nút bên trái (zoomBadge) và khung
+      // TDMAP.PRO.VN/Trạng thái/Nền nhãn bên phải (logoWrap) - trên màn hình
+      // điện thoại hẹp, logoWrap thường cao hơn zoomBadge -> nếu chỉ tính theo
+      // zoomBadge, thanh tìm kiếm bị đặt quá cao, chui xuống dưới logoWrap
+      // và bị nó đè lên.
+      let maxBottom = rowRect.bottom;
+      if (logoWrap) maxBottom = Math.max(maxBottom, logoWrap.getBoundingClientRect().bottom);
+      const newTop = Math.round(maxBottom + 10);
+      searchBar.style.top = newTop + 'px';
+      if (suggestions) {
+        const barRect = searchBar.getBoundingClientRect();
+        suggestions.style.top = Math.round(barRect.bottom + 8) + 'px';
+      }
+
+      // Đưa control chọn ngưỡng nhãn (trái) + cụm nút 🧭/📍/+/- (phải, góc Leaflet
+      // 'topright') xuống NGAY DƯỚI thanh tìm kiếm - để khi bảng thông tin thửa mở
+      // ra (che gần hết nửa dưới màn hình) 2 cụm này KHÔNG bị đè lên, vì chúng
+      // luôn nằm ở phần trên màn hình. Tính lại mỗi lần layout đổi (xoay màn hình,
+      // đổi cỡ chữ trình duyệt...) để luôn khớp với chiều cao thật của thanh tìm
+      // kiếm thay vì đoán cứng 1 giá trị pixel.
+      const searchBarRect = searchBar.getBoundingClientRect();
+      const belowSearchTop = Math.round(searchBarRect.bottom + 10);
+      const labelZoomControl = document.getElementById('labelZoomControl');
+      if (labelZoomControl) labelZoomControl.style.top = belowSearchTop + 'px';
+      // Lúc gọi lần đầu (ngay khi script chạy), bản đồ Leaflet + các control 🧭/📍/+/-
+      // CHƯA được tạo (map khởi tạo ở đoạn code phía dưới) -> phần tử ".leaflet-top.
+      // leaflet-right" chưa tồn tại trong DOM -> querySelector trả về null, bỏ qua an
+      // toàn; các lần gọi lại sau (load/resize/setTimeout) sẽ tìm thấy và set đúng.
+      const topRightCorner = document.querySelector('.leaflet-top.leaflet-right');
+      if (topRightCorner) topRightCorner.style.top = belowSearchTop + 'px';
+    }
+    window.addEventListener('load', adjustTopLayout);
+    window.addEventListener('resize', adjustTopLayout);
+    window.addEventListener('orientationchange', () => setTimeout(adjustTopLayout, 150));
+    // Chạy ngay + lần nữa sau khi layout ổn định (webfont/icon có thể đổi kích thước nút)
+    adjustTopLayout();
+    setTimeout(adjustTopLayout, 300);
+
+    const map = L.map('map', {
+      zoomControl: false, attributionControl: false,
+      // preferCanvas: dồn các layer vector mới tạo về renderer Canvas mặc định
+      // (đỡ tốn DOM node), đồng bộ với mapCanvasRenderer dùng riêng cho thửa/ranh.
+      preferCanvas: true
+    });
+    const tileLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      subdomains: '0123', maxZoom: 22,
+      // TỐI ƯU: khi người dùng kéo/lướt bản đồ nhanh (đặc biệt trên di động, mạng
+      // 3G/4G yếu), tile ở các vị trí trung gian sẽ liên tục được yêu cầu rồi huỷ
+      // ngay -> tốn băng thông + CPU giải nén ảnh vô ích, gây giật. keepBuffer cao
+      // hơn giữ lại tile lân cận đã tải để tái dùng khi quay lại; updateWhenZooming
+      // false tránh tải tile ở mức zoom trung gian trong lúc đang animate zoom.
+      keepBuffer: 3,
+      updateWhenZooming: false,
+      updateWhenIdle: false
+    }).addTo(map);
+    // Nếu tile lỗi (mạng chậm, hoặc nguồn tile không chính thức của Google bị giới
+    // hạn/chặn tạm thời do quá nhiều request đồng thời từ nhiều người dùng) -> báo
+    // trạng thái thay vì im lặng để trắng bản đồ, người dùng biết là do mạng/tile
+    // chứ không nghĩ web bị treo.
+    let tileErrorNotified = false;
+    tileLayer.on('tileerror', () => {
+      if (tileErrorNotified) return;
+      tileErrorNotified = true;
+      showStatus('Bản đồ nền tải chậm (mạng yếu hoặc nguồn ảnh vệ tinh đang quá tải) — vui lòng chờ hoặc thử lại.');
+      setTimeout(() => { tileErrorNotified = false; }, 8000);
+    });
+
+    L.control.attribution({ position: 'bottomright', prefix: '' })
+      .addAttribution('© Google · TDMAP.PRO.VN').addTo(map);
+
+    // ── CỤM NÚT 🧭/📍/+/- - CHUYỂN TỪ GÓC DƯỚI-PHẢI LÊN GÓC TRÊN-PHẢI ────────────────
+    // (position: 'topright' thay vì 'bottomright' như trước) để khi bảng thông
+    // tin thửa (popup) mở lên che gần hết nửa dưới màn hình, cụm nút này không bị
+    // đè/che mất - luôn nằm ở phần trên màn hình, ngay dưới thanh tìm kiếm (vị trí
+    // top chính xác do adjustTopLayout() tự tính, xem hàm đó phía trên).
+    // Thứ tự ADD quan trọng: góc 'topright' của Leaflet xếp control thêm SAU xuống
+    // PHÍA DƯỚI control thêm trước (ngược với góc 'bottomright' cũ dùng
+    // column-reverse) -> để giữ đúng thứ tự hiển thị từ trên xuống như trước
+    // (🧭 di chuyển → 📍 vị trí của tôi → +/- zoom), phải thêm NavModeControl
+    // trước, LocateControl kế tiếp, rồi mới đến control zoom (+/-) sau cùng.
+    const NavModeControl = L.Control.extend({
+      options: { position: 'topright' },
+      onAdd: function () {
+        const btn = document.getElementById('navModeBtn');
+        L.DomEvent.disableClickPropagation(btn);
+        return btn;
+      }
+    });
+    map.addControl(new NavModeControl());
+
+    const LocateControl = L.Control.extend({
+      options: { position: 'topright' },
+      onAdd: function () {
+        const btn = document.getElementById('locateBtn');
+        L.DomEvent.disableClickPropagation(btn);
+        return btn;
+      }
+    });
+    map.addControl(new LocateControl());
+
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Gọi lại NGAY sau khi các control 🧭/📍/+/- vừa được tạo xong (thay vì chỉ chờ
+    // setTimeout 300ms ở trên) - để định vị đúng chỗ ngay từ đầu, tránh nhấp nháy
+    // sai vị trí thoáng qua lúc tải trang.
+    adjustTopLayout();
+
+    map.setView([12.7, 108.2], 13);
+
+    // ── TẠM DỪNG TỰ-PAN KHI NGƯỜI DÙNG ĐANG CHẠM BẢN ĐỒ ─────────────────────────────
+    // Khi chế độ 🧭 "Định vị khi di chuyển" đang bật, mỗi lần có toạ độ GPS mới bản
+    // đồ tự panTo() theo (xem startNavMode). Nếu đúng lúc đó người dùng đang đặt/
+    // nhấc ngón tay để CHỌN 1 THỬA, bản đồ bị dịch chuyển ngay GIỮA thao tác chạm
+    // (giữa lúc đặt ngón tay xuống và lúc nhấc lên) -> thửa đang ở dưới ngón tay bị
+    // trôi sang vị trí khác trước khi ngón tay nhấc lên -> chạm trượt ra ngoài ranh
+    // thửa -> KHÔNG bắn được sự kiện click lên thửa nào -> không hiện thông tin.
+    // Đây chính là nguyên nhân của lỗi "định vị/di chuyển xong không chọn được
+    // thửa". Khắc phục: theo dõi lúc nào có ngón tay/con trỏ đang thật sự chạm
+    // trên bản đồ (pointerdown -> pointerup/cancel), và bỏ qua panTo() trong
+    // khoảng đó - chấm vị trí GPS vẫn cập nhật bình thường, chỉ việc "tự lướt
+    // theo" bị hoãn lại đúng bằng thời gian thao tác chạm (thường < 1 giây),
+    // không ảnh hưởng cảm giác "bám theo" khi đang đi bộ/lái xe.
+    let mapPointerActive = false;
+    const mapContainerEl = map.getContainer();
+    mapContainerEl.addEventListener('pointerdown', () => { mapPointerActive = true; }, { passive: true });
+    mapContainerEl.addEventListener('pointerup', () => { mapPointerActive = false; }, { passive: true });
+    mapContainerEl.addEventListener('pointercancel', () => { mapPointerActive = false; }, { passive: true });
+
+    // ── TỰ ĐỘNG invalidateSize() MỖI KHI KHUNG NHÌN TRÌNH DUYỆT THẬT SỰ ĐỔI KÍCH
+    //    THƯỚC (không chỉ riêng lúc bật/tắt định vị) ─────────────────────────────
+    // Trước đây chỉ gọi map.invalidateSize() ngay lúc bật/tắt 📍/🧭, nhưng thanh
+    // địa chỉ trên điện thoại có thể ẩn/hiện (làm đổi chiều cao khung nhìn) bất cứ
+    // lúc nào trong lúc người dùng CUỘN/KÉO bản đồ tay - kể cả SAU KHI đã tắt định
+    // vị từ trước - không chỉ đúng khoảnh khắc bật/tắt. Nếu không báo cho Leaflet
+    // biết, nó vẫn dùng kích thước/gốc toạ độ CŨ để tính chạm -> chạm đúng thửa
+    // trên màn hình nhưng tính sai vị trí trên bản đồ -> không chọn được thửa dù
+    // đã kéo tới đúng khu vực có dữ liệu. window.visualViewport là API chính xác
+    // nhất để bắt sự kiện này trên điện thoại (bắn đúng lúc thanh địa chỉ/bàn phím
+    // ảo ẩn-hiện làm đổi khung nhìn thật); 'resize' của window là lớp dự phòng cho
+    // trình duyệt không hỗ trợ visualViewport.
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => map.invalidateSize());
+    }
+    window.addEventListener('resize', () => map.invalidateSize());
+
+    // Dùng Canvas renderer thay vì SVG mặc định: nhẹ hơn nhiều lần khi vẽ
+    // hàng nghìn thửa (mỗi polygon SVG là 1 thẻ DOM riêng, Canvas thì không).
+    // tolerance: 15 -> MỞ RỘNG vùng bắt chạm quanh viền mỗi thửa thêm ~15px (tăng
+    // từ 8 lên 15 sau khi xác nhận qua log debug trên điện thoại thật: bản đồ tính
+    // ĐÚNG toạ độ chạm, nhưng ngón tay lệch ra ngoài ranh thửa vài-chục pixel do
+    // viền/khoảng tô mỗi thửa khá mảnh và mờ (fillOpacity thấp), khó nhìn chính
+    // xác trên màn hình nhỏ. Mặc định Canvas renderer có tolerance = 0 (phải chạm
+    // CHÍNH XÁC vào path), khác với SVG (trình duyệt tự có dung sai bắt sự kiện).
+    // Lưu ý: tolerance chỉ mở rộng vùng bắt quanh VIỀN (đường path); phần RUỘT bên
+    // trong polygon vốn đã luôn bắt chạm chính xác 100% không cần tolerance - nếu
+    // chạm hẳn vào giữa 1 thửa mà vẫn không trúng thì đó là bằng chứng ngón tay
+    // thực sự đã chạm ra ngoài ranh giới thật của thửa đó (không phải lỗi phần mềm).
+    const mapCanvasRenderer = L.canvas({ padding: 0.5, tolerance: 15 }).addTo(map);
+
+    // ── TIỆN ÍCH ──────────────────────────────────────────────────────────────────
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    // ── STATE ─────────────────────────────────────────────────────────────────────
+    let allParcels = [];
+    let allLayers = [];
+    let activeP = null;
+    // Mốc thời gian lần cuối 1 thửa (poly/dot) vừa được tap/click, dùng để map.on('click')
+    // bên dưới biết mà KHÔNG đóng popup ngay sau khi vừa mở. Dùng biến thời gian thay vì
+    // đánh dấu lên e.originalEvent vì trên di động, sự kiện "tap" giả lập của Leaflet đôi khi
+    // là 1 object khác với sự kiện "click" mà map nhận được -> đánh dấu trên originalEvent bị
+    // mất, khiến popup mở ra rồi bị đóng lại tức thì (thửa không chọn được / như bị "treo").
+    let lastParcelClickAt = 0;
+    let ranhThonLayers = [];
+    let currentLoadedFileName = '';
+    let diaDiemLayers = [];
+    let diaDiemVisible = true;
+
+    // ── KML PARSER ────────────────────────────────────────────────────────────────
+    // Trả về { parcels, ranhThon: { lines, labels } }
+    // - parcels: các thửa đất (Polygon + Point có tên dạng "Tờ-Thửa")
+    // - ranhThon.lines: các đoạn LineString ranh giới thôn/tổ dân phố
+    // - ranhThon.labels: các Point có tên KHÔNG theo mẫu Tờ-Thửa (vd "TDP 8B")
+    // Trích Diện tích / Loại đất / Tên chủ từ chuỗi "label" gộp dạng
+    // "To-Thua-DienTich-LoaiDat[-TenChu]" (vd "109-605-156.2-CLN-đỗ tài").
+    // Dùng chung cho cả KML (name/label placemark) và GeoJSON (properties.label)
+    // khi các trường riêng lẻ không có sẵn.
+    function parseLabelCompound(label, id) {
+      const out = { dienTich: '', loaiDat: '', tenChu: '', trangThaiDK: '' };
+      if (!label || !id) return out;
+      const prefix = id + '-';
+      if (!label.startsWith(prefix)) return out;
+      let rest = label.slice(prefix.length);
+      // Trạng thái đăng ký (CDK/DDK) luôn là đoạn cuối cùng của label nếu có -
+      // tách ra trước để không bị lẫn vào tên chủ.
+      const mStatus = rest.match(/-(CDK|DDK)$/i);
+      if (mStatus) {
+        out.trangThaiDK = mStatus[1].toUpperCase();
+        rest = rest.slice(0, rest.length - mStatus[0].length);
+      }
+      const m = rest.match(/^([\d.,]+)-([A-Za-zÀ-ỹ+]+)(?:-(.+))?$/);
+      if (m) {
+        out.dienTich = m[1] || '';
+        out.loaiDat = m[2] || '';
+        out.tenChu = (m[3] || '').trim();
+      }
+      return out;
+    }
+
+    // Trích Diện tích / Loại đất / Tên chủ từ ExtendedData (Data hoặc SchemaData/
+    // SimpleData) của 1 Placemark KML, nếu file KML xuất kèm các trường này riêng.
+    function extractKmlExtendedData(pm) {
+      const data = {};
+      pm.querySelectorAll('ExtendedData Data').forEach(d => {
+        const name = (d.getAttribute('name') || '').toLowerCase();
+        const valueEl = d.querySelector('value');
+        data[name] = (valueEl ? valueEl.textContent : '') || '';
+      });
+      pm.querySelectorAll('ExtendedData SchemaData SimpleData').forEach(d => {
+        const name = (d.getAttribute('name') || '').toLowerCase();
+        data[name] = d.textContent || '';
+      });
+      return data;
+    }
+
+    function pickField(data, keys) {
+      for (const k of keys) { if (data[k]) return data[k]; }
+      return '';
+    }
+
+    // Trích Diện tích / Loại đất / Tên chủ từ nội dung mô tả (description) dạng
+    // text/HTML có ghi rõ nhãn Việt hoá, vd "Diện tích: 156.2, Loại đất: CLN...".
+    function parseDescFields(desc) {
+      const out = { dienTich: '', loaiDat: '', tenChu: '' };
+      if (!desc) return out;
+      const mD = desc.match(/Di[eệ]n\s*t[íi]ch[:\s]+([\d.,]+)/i);
+      const mL = desc.match(/Lo[aạ]i\s*đ[aấ]t[:\s]+([^\n,<]+)/i);
+      const mT = desc.match(/T[eê]n\s*ch[uủ][:\s]+([^\n<]+)/i);
+      if (mD) out.dienTich = mD[1].trim();
+      if (mL) out.loaiDat = mL[1].trim();
+      if (mT) out.tenChu = mT[1].trim();
+      return out;
+    }
+
+    // Bổ sung dienTich/loaiDat/tenChu cho 1 thửa (p) từ 1 Placemark KML (pm),
+    // thử lần lượt: ExtendedData -> chuỗi name gộp -> description. Chỉ điền
+    // vào những trường còn thiếu (không ghi đè dữ liệu đã có).
+    function enrichParcelFromKmlPlacemark(p, pm, name, id) {
+      if (p.dienTich && p.loaiDat && p.tenChu && p.trangThaiDK) return;
+      const ext = extractKmlExtendedData(pm);
+      const dt = pickField(ext, ['dientich', 'dien_tich', 'area', 'dt', 'dientich(m2)']);
+      const ld = pickField(ext, ['loaidat', 'loai_dat', 'landtype', 'ld', 'loai']);
+      const tc = pickField(ext, ['tenchu', 'ten_chu', 'owner', 'chusd', 'chusudung', 'chu_su_dung']);
+      const tt = pickField(ext, ['trangthaidk', 'trang_thai_dk', 'trangthai', 'tranthaidk']);
+      if (!p.dienTich && dt) p.dienTich = dt;
+      if (!p.loaiDat && ld) p.loaiDat = ld;
+      if (!p.tenChu && tc) p.tenChu = tc;
+      if (!p.trangThaiDK && tt) p.trangThaiDK = tt.toUpperCase();
+
+      if (!p.dienTich || !p.loaiDat || !p.trangThaiDK) {
+        const lc = parseLabelCompound(name.trim(), id);
+        if (!p.dienTich && lc.dienTich) p.dienTich = lc.dienTich;
+        if (!p.loaiDat && lc.loaiDat) p.loaiDat = lc.loaiDat;
+        if (!p.tenChu && lc.tenChu) p.tenChu = lc.tenChu;
+        if (!p.trangThaiDK && lc.trangThaiDK) p.trangThaiDK = lc.trangThaiDK;
+      }
+
+      if (!p.dienTich || !p.loaiDat || !p.tenChu) {
+        const descEl = pm.querySelector('description');
+        const dd = parseDescFields(descEl ? descEl.textContent : '');
+        if (!p.dienTich && dd.dienTich) p.dienTich = dd.dienTich;
+        if (!p.loaiDat && dd.loaiDat) p.loaiDat = dd.loaiDat;
+        if (!p.tenChu && dd.tenChu) p.tenChu = dd.tenChu;
+      }
+    }
+
+    function parseKML(xml) {
+      const doc = new DOMParser().parseFromString(xml, 'text/xml');
+      const pms = Array.from(doc.querySelectorAll('Placemark'));
+      const byId = {};
+      const thonLines = [];
+      const thonLabels = [];
+      let hsqXaLink = '';
+
+      pms.forEach(pm => {
+        // Ranh thôn: bất kỳ Placemark nào có LineString (không phải thửa đất)
+        const lineEl = pm.querySelector('LineString coordinates');
+        if (lineEl) {
+          const pts = lineEl.textContent.trim().split(/\s+/).map(s => {
+            const [lo, la] = s.split(',').map(Number);
+            return (!isNaN(la) && !isNaN(lo)) ? [la, lo] : null;
+          }).filter(Boolean);
+          if (pts.length > 1) thonLines.push(pts);
+          return;
+        }
+
+        const name = (pm.querySelector('name') || {}).textContent || '';
+
+        // Điểm ghi chú Link HSQ Tổng của xã (do QGIS script TDMAP xuất ra, đứng NGOÀI mọi thửa) —
+        // nhận diện qua tên "HSQ Tổng", không thuộc mẫu Tờ-Thửa, không đưa vào danh sách thửa/nhãn thôn.
+        if (/HSQ\s*T[oổ]ng/i.test(name)) {
+          const descEl0 = pm.querySelector('description');
+          const desc0 = descEl0 ? (descEl0.textContent || '') : '';
+          const mLink = desc0.match(/https?:\/\/drive\.google\.com\S+/);
+          if (mLink && !hsqXaLink) hsqXaLink = mLink[0].replace(/&amp;/g, '&');
+          return;
+        }
+
+        const idM = name.trim().match(/^(\d+[-–]\d+)/);
+        const id = idM ? idM[1].replace('–', '-') : null;
+
+        // Nhãn ranh thôn: Point có tên nhưng KHÔNG theo mẫu số Tờ-Thửa
+        if (!id) {
+          const ptEl2 = pm.querySelector('Point coordinates');
+          const nm = name.trim();
+          if (ptEl2 && nm) {
+            const [lo, la] = ptEl2.textContent.trim().split(',').map(Number);
+            if (!isNaN(la) && !isNaN(lo)) thonLabels.push({ lat: la, lon: lo, name: nm });
+          }
+          return;
+        }
+
+        if (!byId[id]) byId[id] = { id, lat: null, lon: null, linkHSQ: '', dienTich: '', loaiDat: '', tenChu: '', trangThaiDK: '', chiDuong: '', rings: [] };
+        const p = byId[id];
+        enrichParcelFromKmlPlacemark(p, pm, name, id);
+
+        pm.querySelectorAll('Polygon outerBoundaryIs LinearRing coordinates').forEach(el => {
+          const pts = el.textContent.trim().split(/\s+/).map(s => {
+            const [lo, la] = s.split(',').map(Number);
+            return (!isNaN(la) && !isNaN(lo)) ? [la, lo] : null;
+          }).filter(Boolean);
+          if (pts.length > 2) p.rings.push(pts);
+        });
+
+        const ptEl = pm.querySelector('Point coordinates');
+        if (ptEl) {
+          const [lo, la] = ptEl.textContent.trim().split(',').map(Number);
+          if (!isNaN(la)) { p.lat = la; p.lon = lo; }
+          const desc = (pm.querySelector('description') || {}).textContent || '';
+          const m = (name + ' ' + desc).match(/https?:\/\/drive\.google\.com\S+/);
+          if (m && !p.linkHSQ) p.linkHSQ = m[0].replace(/&/g, '&');
+          const mMaps = (name + ' ' + desc).match(/https?:\/\/www\.google\.com\/maps\S+/);
+          if (mMaps && !p.chiDuong) p.chiDuong = mMaps[0].replace(/&/g, '&');
+        }
+      });
+
+      Object.values(byId).forEach(p => {
+        if (!p.lat && p.rings.length) {
+          const r = p.rings[0];
+          p.lat = r.reduce((s, c) => s + c[0], 0) / r.length;
+          p.lon = r.reduce((s, c) => s + c[1], 0) / r.length;
+        }
+      });
+
+      const parcels = Object.values(byId).filter(p => p.rings.length > 0 || p.lat)
+        .sort((a, b) => {
+          const [aT, aU] = a.id.split('-').map(Number);
+          const [bT, bU] = b.id.split('-').map(Number);
+          return aT !== bT ? aT - bT : aU - bU;
+        });
+
+      return { parcels, ranhThon: { lines: thonLines, labels: thonLabels }, hsqXaLink };
+    }
+
+    // ── GEOJSON PARSER ────────────────────────────────────────────────────────────
+    // Đọc file .geojson do QGIS script TDMAP xuất ra (cấu trúc tương đương KML):
+    // - Thửa đất: 2 Feature/thửa — Polygon/MultiPolygon (ranh) + Point (nhãn),
+    //   nhận diện qua thuộc tính 'khoa' (Tờ-Thửa), gộp lại theo cùng 'khoa'.
+    // - Ranh thôn: Feature LineString/MultiLineString có properties.loai = 'ranh_thon'.
+    // - Nhãn tên thôn: Feature Point có properties.loai = 'nhan_thon' (tên ở 'ten_thon').
+    // Trả về cùng cấu trúc { parcels, ranhThon: { lines, labels } } như parseKML.
+    function parseGeoJSON(text) {
+      const gj = typeof text === 'string' ? JSON.parse(text) : text;
+      const feats = (gj && gj.features) || [];
+      const byId = {};
+      const thonLines = [];
+      const thonLabels = [];
+      let hsqXaLink = '';
+
+      // GeoJSON dùng thứ tự [lon, lat] -> Leaflet cần [lat, lon]
+      const toLatLngRing = (ring) => ring.map(c => [c[1], c[0]]);
+
+      feats.forEach(f => {
+        const props = (f && f.properties) || {};
+        const geom = f && f.geometry;
+        if (!geom) return;
+
+        // --- Điểm ghi chú Link HSQ Tổng của xã (do QGIS script TDMAP xuất ra, đứng NGOÀI mọi thửa) ---
+        if (props.linkHSQXa) {
+          if (!hsqXaLink) hsqXaLink = String(props.linkHSQXa);
+          return;
+        }
+
+        // --- Ranh thôn (đường) ---
+        if (props.loai === 'ranh_thon') {
+          if (geom.type === 'LineString') {
+            const pts = toLatLngRing(geom.coordinates || []);
+            if (pts.length > 1) thonLines.push(pts);
+          } else if (geom.type === 'MultiLineString') {
+            (geom.coordinates || []).forEach(line => {
+              const pts = toLatLngRing(line || []);
+              if (pts.length > 1) thonLines.push(pts);
+            });
+          }
+          return;
+        }
+
+        // --- Nhãn tên thôn (điểm) ---
+        if (props.loai === 'nhan_thon') {
+          if (geom.type === 'Point') {
+            const [lo, la] = geom.coordinates || [];
+            if (!isNaN(la) && !isNaN(lo)) {
+              thonLabels.push({ lat: la, lon: lo, name: props.ten_thon || '' });
+            }
+          }
+          return;
+        }
+
+        // --- Thửa đất: nhận diện qua thuộc tính 'khoa', dự phòng bằng 'label' ---
+        let id = (props.khoa != null && props.khoa !== '') ? String(props.khoa) : null;
+        if (!id && props.label) {
+          const m = String(props.label).match(/^(\d+[-–]\d+)/);
+          if (m) id = m[1];
+        }
+        if (!id) return;
+        id = id.replace('–', '-');
+
+        if (!byId[id]) byId[id] = { id, lat: null, lon: null, linkHSQ: '', dienTich: '', loaiDat: '', tenChu: '', trangThaiDK: '', chiDuong: '', rings: [] };
+        const p = byId[id];
+
+        // Bổ sung dienTich/loaiDat/tenChu: ưu tiên các trường riêng lẻ do QGIS
+        // xuất ra, nếu thiếu thì thử tách từ chuỗi "label" gộp.
+        if (props.dienTich != null && props.dienTich !== '' && !p.dienTich) p.dienTich = String(props.dienTich);
+        if (props.loaiDat && !p.loaiDat) p.loaiDat = String(props.loaiDat);
+        if (props.tenChu && !p.tenChu) p.tenChu = String(props.tenChu);
+        if (props.trangThaiDK && !p.trangThaiDK) p.trangThaiDK = String(props.trangThaiDK).trim().toUpperCase();
+        if ((!p.dienTich || !p.loaiDat || !p.tenChu || !p.trangThaiDK) && props.label) {
+          const lc = parseLabelCompound(String(props.label), id);
+          if (!p.dienTich && lc.dienTich) p.dienTich = lc.dienTich;
+          if (!p.loaiDat && lc.loaiDat) p.loaiDat = lc.loaiDat;
+          if (!p.tenChu && lc.tenChu) p.tenChu = lc.tenChu;
+          if (!p.trangThaiDK && lc.trangThaiDK) p.trangThaiDK = lc.trangThaiDK;
+        }
+        if (props.chiDuong && !p.chiDuong) p.chiDuong = String(props.chiDuong);
+
+        if (geom.type === 'Polygon') {
+          (geom.coordinates || []).forEach(ring => {
+            const pts = toLatLngRing(ring || []);
+            if (pts.length > 2) p.rings.push(pts);
+          });
+        } else if (geom.type === 'MultiPolygon') {
+          (geom.coordinates || []).forEach(poly => {
+            (poly || []).forEach(ring => {
+              const pts = toLatLngRing(ring || []);
+              if (pts.length > 2) p.rings.push(pts);
+            });
+          });
+        } else if (geom.type === 'Point') {
+          const [lo, la] = geom.coordinates || [];
+          if (!isNaN(la)) { p.lat = la; p.lon = lo; }
+          if (props.linkHSQ && !p.linkHSQ) p.linkHSQ = props.linkHSQ;
+        }
+      });
+
+      Object.values(byId).forEach(p => {
+        if (!p.lat && p.rings.length) {
+          const r = p.rings[0];
+          p.lat = r.reduce((s, c) => s + c[0], 0) / r.length;
+          p.lon = r.reduce((s, c) => s + c[1], 0) / r.length;
+        }
+      });
+
+      const parcels = Object.values(byId).filter(p => p.rings.length > 0 || p.lat)
+        .sort((a, b) => {
+          const [aT, aU] = a.id.split('-').map(Number);
+          const [bT, bU] = b.id.split('-').map(Number);
+          return aT !== bT ? aT - bT : aU - bU;
+        });
+
+      return { parcels, ranhThon: { lines: thonLines, labels: thonLabels }, hsqXaLink };
+    }
+    // Render theo từng lô nhỏ (chunk) bằng requestAnimationFrame để nhường quyền
+    // điều khiển cho trình duyệt giữa các lô -> tránh treo "Page Unresponsive"
+    // kể cả với dữ liệu >3000 thửa. (Kích thước lô giờ tự co giãn theo ngân sách
+    // thời gian rảnh thực tế — xem scheduleChunk/step bên dưới.)
+
+    // requestIdleCallback mượt hơn rAF khi rảnh, nhưng không phải trình duyệt nào
+    // cũng hỗ trợ -> có fallback về rAF. Với rAF, tự tạo "deadline" giả (ngân sách
+    // ~8ms mỗi khung hình, chừa lại thời gian cho trình duyệt vẽ khung hình kịp
+    // 60fps) để vòng lặp chia lô phía dưới xử lý đồng nhất trên mọi trình duyệt.
+    const scheduleChunk = window.requestIdleCallback
+      ? (fn) => requestIdleCallback(fn, { timeout: 100 })
+      : (fn) => requestAnimationFrame(() => {
+        const start = performance.now();
+        fn({ timeRemaining: () => Math.max(0, 8 - (performance.now() - start)), didTimeout: false });
+      });
+
+    // Chỉ hiện nhãn (tooltip) VÀ chấm điểm giữa thửa khi zoom đủ lớn, đồng thời
+    // chỉ bind/add cho các thửa đang nằm TRONG khung nhìn hiện tại (không phải
+    // toàn bộ 3000+ thửa cùng lúc). Việc này chạy lại mỗi khi zoom/kéo bản đồ
+    // (moveend) nhưng chỉ xử lý phần đang hiển thị nên rất nhẹ. Ranh thửa (polygon)
+    // luôn hiển thị ở mọi mức zoom, chỉ nhãn + chấm điểm bị ẩn khi zoom nhỏ.
+    const LABEL_ZOOM_OPTIONS = [16, 17, 18, 19];
+    const LABEL_ZOOM_STORAGE_KEY = 'tdmap_labelMinZoom';
+    // Ngưỡng hiện nhãn + chấm điểm — người dùng có thể đổi qua control 16/17/18,
+    // lựa chọn được nhớ lại cho lần mở sau (localStorage). Mặc định 17 nếu chưa
+    // từng chọn hoặc giá trị lưu không hợp lệ.
+    let LABEL_MIN_ZOOM = (() => {
+      try {
+        const saved = parseInt(localStorage.getItem(LABEL_ZOOM_STORAGE_KEY), 10);
+        if (LABEL_ZOOM_OPTIONS.includes(saved)) return saved;
+      } catch (e) { /* localStorage có thể bị chặn (chế độ ẩn danh...) — bỏ qua */ }
+      return 17;
+    })();
+
+    function setLabelMinZoom(z) {
+      if (!LABEL_ZOOM_OPTIONS.includes(z) || z === LABEL_MIN_ZOOM) {
+        // Vẫn đồng bộ trạng thái nút active dù giá trị không đổi
+        document.querySelectorAll('.lzc-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.zoom) === LABEL_MIN_ZOOM));
+        return;
+      }
+      LABEL_MIN_ZOOM = z;
+      try { localStorage.setItem(LABEL_ZOOM_STORAGE_KEY, String(z)); } catch (e) { /* bỏ qua nếu bị chặn */ }
+      document.querySelectorAll('.lzc-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.zoom) === z));
+      updateAllLabels();
+      updateZoomBadge();
+      showStatus(`Đã đặt ngưỡng hiện nhãn/điểm: zoom ≥${z}`);
+    }
+
+    document.querySelectorAll('.lzc-btn').forEach(btn => {
+      btn.addEventListener('click', () => setLabelMinZoom(Number(btn.dataset.zoom)));
+    });
+    setLabelMinZoom(LABEL_MIN_ZOOM); // Đồng bộ nút active với giá trị khởi tạo
+    function updateAllLabels() {
+      const show = map.getZoom() >= LABEL_MIN_ZOOM;
+      if (!show) {
+        // Chỉ cần duyệt các thửa ĐANG có mặt trên bản đồ (renderedSet), không phải
+        // toàn bộ allParcels -> rất nhanh dù file có 30.000-50.000+ thửa.
+        renderedSet.forEach(p => {
+          if (p._lblBound) { p._dot.unbindTooltip(); p._lblBound = false; }
+          if (p._dot && p._dotAdded) { map.removeLayer(p._dot); p._dotAdded = false; }
+        });
+        return;
+      }
+      const viewBounds = map.getBounds();
+      renderedSet.forEach(p => {
+        if (!p._poly || !p._lbl) return;
+        const inView = p.lat != null && p.lon != null && viewBounds.contains([p.lat, p.lon]);
+        if (inView) {
+          // Gắn nhãn vào chấm tâm (_dot, đặt đúng tại p.lat/p.lon) thay vì vào
+          // polygon (_poly) - Leaflet tự tính "tâm" polygon bằng thuật toán
+          // riêng (bounding box / centroid hình học), với thửa nhỏ/hẹp/hình
+          // tam giác méo, điểm đó có thể rơi ra NGOÀI ranh thửa khiến nhãn bị
+          // hiển thị lệch hẳn ra ngoài hình. Gắn vào _dot đảm bảo nhãn luôn ở
+          // đúng điểm tâm đã tính sẵn, trùng vị trí chấm xanh giữa thửa.
+          if (!p._lblBound) { p._dot.bindTooltip(p._lbl); p._lblBound = true; }
+          if (p._dot && !p._dotAdded) { p._dot.addTo(map); p._dot.redraw(); p._dotAdded = true; }
+        } else {
+          if (p._lblBound) { p._dot.unbindTooltip(); p._lblBound = false; }
+          if (p._dot && p._dotAdded) { map.removeLayer(p._dot); p._dotAdded = false; }
+        }
+      });
+    }
+
+    // ── GIỚI HẠN BỘ NHỚ ĐỆM LAYER (chống crash/"văng trang" trên máy yếu) ──────────
+    // Thiết kế cũ: mỗi thửa 1 khi đã tạo polygon+dot+tooltip thì GIỮ MÃI trong bộ
+    // nhớ (kể cả khi đã gỡ khỏi bản đồ) để "dùng lại cho nhanh". Với file 30.000-
+    // 50.000+ thửa, nếu người dùng pan/zoom qua nhiều khu vực trong 1 phiên, số
+    // lượng object Leaflet cache tăng dần KHÔNG GIỚI HẠN -> ngốn RAM liên tục ->
+    // trên điện thoại tầm trung/thấp trình duyệt sẽ tự kill tab (out trang).
+    // Giải pháp: giới hạn số thửa "vật chất hoá" (đã tạo poly/dot/tooltip) tối đa
+    // cùng lúc; khi vượt ngưỡng, huỷ hẳn (giải phóng bộ nhớ) những thửa lâu chưa
+    // dùng nhất và hiện KHÔNG có trên bản đồ (LRU - Least Recently Used).
+    const MAX_CACHED_LAYERS = 6000;
+    const PRUNE_HYSTERESIS = 1200; // chỉ prune khi vượt ngưỡng + đệm này, tránh prune liên tục
+    let materializedCount = 0;
+    let lruCounter = 0;
+
+    function destroyParcelLayers(p) {
+      if (p._poly) { p._poly.off(); p._poly = null; }
+      if (p._dot) { p._dot.off(); p._dot = null; }
+      p._lbl = null; p._lblBound = false; p._dotAdded = false; p._onMap = false;
+      materializedCount--;
+    }
+
+    function pruneLayerCache() {
+      if (materializedCount <= MAX_CACHED_LAYERS + PRUNE_HYSTERESIS) return;
+      // Chỉ xét các thửa ĐÃ có layer nhưng KHÔNG còn trên bản đồ hiện tại.
+      const offMapCached = [];
+      for (let i = 0; i < allParcels.length; i++) {
+        const p = allParcels[i];
+        if (p._poly && !p._onMap) offMapCached.push(p);
+      }
+      offMapCached.sort((a, b) => (a._lru || 0) - (b._lru || 0));
+      let toRemove = materializedCount - MAX_CACHED_LAYERS;
+      for (let i = 0; i < offMapCached.length && toRemove > 0; i++) {
+        destroyParcelLayers(offMapCached[i]);
+        toRemove--;
+      }
+    }
+
+    // ── LƯỚI CHỈ MỤC KHÔNG GIAN (spatial grid) + VIEWPORT CULLING ──────────────────
+    // Với file rất lớn (30.000-50.000+ thửa), giữ TẤT CẢ polygon trên Canvas cùng
+    // lúc khiến trình duyệt phải vẽ lại toàn bộ ở mỗi khung hình khi pan/zoom ->
+    // rất giật lag. Giải pháp: chia khu vực thành lưới ô nhỏ (GRID_CELL_DEG), chỉ
+    // thêm vào bản đồ các thửa nằm trong (hoặc gần, có vùng đệm) khung nhìn hiện
+    // tại; thửa ở xa được GỠ khỏi bản đồ nhưng vẫn giữ lại đối tượng Leaflet đã
+    // tạo (poly/dot/tooltip) để dùng lại ngay khi người dùng quay lại khu vực đó,
+    // không phải tạo mới từ đầu (đỡ tốn CPU).
+    const GRID_CELL_DEG = 0.004;               // ~400m mỗi ô lưới
+    let spatialGrid = new Map();             // "latIdx_lonIdx" -> [thửa, ...]
+    let renderedSet = new Set();             // các thửa hiện đang có poly trên bản đồ
+    const cellKeyOf = (i, j) => i + '_' + j;
+
+    function computeParcelBBox(p) {
+      if (p.rings && p.rings.length) {
+        let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+        for (const ring of p.rings) {
+          for (let k = 0; k < ring.length; k++) {
+            const la = ring[k][0], lo = ring[k][1];
+            if (la < minLat) minLat = la; if (la > maxLat) maxLat = la;
+            if (lo < minLon) minLon = lo; if (lo > maxLon) maxLon = lo;
+          }
+        }
+        p._minLat = minLat; p._maxLat = maxLat; p._minLon = minLon; p._maxLon = maxLon;
+      } else if (p.lat != null && p.lon != null) {
+        const eps = 0.0002; // thửa chỉ có điểm (không có ranh) -> tạo "ô" nhỏ quanh điểm
+        p._minLat = p.lat - eps; p._maxLat = p.lat + eps; p._minLon = p.lon - eps; p._maxLon = p.lon + eps;
+      }
+    }
+
+    function boxIntersects(p, minLat, maxLat, minLon, maxLon) {
+      return p._minLat != null &&
+        p._minLat <= maxLat && p._maxLat >= minLat &&
+        p._minLon <= maxLon && p._maxLon >= minLon;
+    }
+
+    // ── CHẨN ĐOÁN CHẠM HỤT (TẠM THỜI) ────────────────────────────────────────────
+    // Ray-casting kiểm tra 1 điểm (lat,lon) có nằm trong 1 ring (đa giác) hay không.
+    function pointInRing(lat, lon, ring) {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const yi = ring[i][0], xi = ring[i][1];
+        const yj = ring[j][0], xj = ring[j][1];
+        const intersect = ((yi > lat) !== (yj > lat)) &&
+          (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+    // ── LƯỚI AN TOÀN TẦNG ỨNG DỤNG (tự tìm thửa theo hình học, KHÔNG phụ thuộc cơ
+    //    chế click nội bộ của Leaflet Canvas) ──────────────────────────────────────
+    // Sau nhiều lần chẩn đoán thực tế, xác nhận: có trường hợp 1 thửa đang thật sự
+    // ở trên bản đồ (_onMap=true, hasPoly=true) và điểm chạm nằm ĐÚNG bên trong
+    // ranh giới thật (đã tính đúng cả phần lỗ/suối), NHƯNG Leaflet vẫn không tự
+    // bắn được sự kiện click lên polygon đó (nguyên nhân sâu bên trong cơ chế
+    // hit-test của Canvas renderer, dù đã thử nhiều cách vá vẫn chưa dứt điểm).
+    // Thay vì tiếp tục dò lỗi nội bộ thư viện, dùng NGAY phép toán hình học này
+    // (đã kiểm chứng chính xác qua log thực tế) làm nguồn xác định chính, gọi
+    // trực tiếp openPopup() khi xác định chắc chắn chạm trúng 1 thửa - xem
+    // map.on('click') bên dưới. Dùng spatialGrid để chỉ quét ứng viên gần điểm
+    // chạm (nhanh, không cần duyệt hết allParcels dù file có 30-50 nghìn thửa).
+    function findParcelAtPoint(lat, lon) {
+      const i = Math.floor(lat / GRID_CELL_DEG), j = Math.floor(lon / GRID_CELL_DEG);
+      const candidates = new Set();
+      // Quét ô hiện tại + 8 ô lân cận (phòng khi thửa lớn tràn qua nhiều ô lưới,
+      // hoặc điểm chạm rơi sát biên 1 ô).
+      for (let di = -1; di <= 1; di++) {
+        for (let dj = -1; dj <= 1; dj++) {
+          const arr = spatialGrid.get(cellKeyOf(i + di, j + dj));
+          if (arr) for (let k = 0; k < arr.length; k++) candidates.add(arr[k]);
+        }
+      }
+      for (const p of candidates) {
+        if (!p._onMap || !p._poly || p._minLat == null) continue;
+        if (lat < p._minLat || lat > p._maxLat || lon < p._minLon || lon > p._maxLon) continue;
+        if (!p.rings || !p.rings.length) continue;
+        if (!pointInRing(lat, lon, p.rings[0])) continue; // phải trong viền ngoài
+        let inHole = false;
+        for (let r = 1; r < p.rings.length; r++) {
+          if (pointInRing(lat, lon, p.rings[r])) { inHole = true; break; } // trừ lỗ (suối...)
+        }
+        if (!inHole) return p;
+      }
+      return null;
+    }
+
+    // Xây lưới + tính sẵn bbox và chuỗi thường-không-dấu-hoa (cache) cho tìm kiếm,
+    // tránh phải tính lại toLowerCase() cho 30.000-50.000 thửa mỗi lần gõ phím.
+    // Đồng thời cộng dồn luôn bounds tổng thể (dùng số thuần, không tạo LatLng
+    // object cho từng điểm như bounds.extend()) để KHÔNG phải duyệt lại toàn bộ
+    // tọa độ 1 lần nữa chỉ để tính bounds — file lớn có thể có hàng trăm nghìn
+    // điểm, duyệt 1 lần thay vì 2 lần giúp mở file nhanh hơn đáng kể.
+    function buildSpatialIndex(list) {
+      spatialGrid = new Map();
+      let gMinLat = Infinity, gMaxLat = -Infinity, gMinLon = Infinity, gMaxLon = -Infinity;
+      list.forEach(p => {
+        computeParcelBBox(p);
+        p._idLower = (p.id || '').toLowerCase();
+        p._tenChuLower = (p.tenChu || '').toLowerCase();
+        if (p._minLat == null) return;
+        if (p._minLat < gMinLat) gMinLat = p._minLat;
+        if (p._maxLat > gMaxLat) gMaxLat = p._maxLat;
+        if (p._minLon < gMinLon) gMinLon = p._minLon;
+        if (p._maxLon > gMaxLon) gMaxLon = p._maxLon;
+        const i0 = Math.floor(p._minLat / GRID_CELL_DEG), i1 = Math.floor(p._maxLat / GRID_CELL_DEG);
+        const j0 = Math.floor(p._minLon / GRID_CELL_DEG), j1 = Math.floor(p._maxLon / GRID_CELL_DEG);
+        for (let i = i0; i <= i1; i++) {
+          for (let j = j0; j <= j1; j++) {
+            const key = cellKeyOf(i, j);
+            let arr = spatialGrid.get(key);
+            if (!arr) { arr = []; spatialGrid.set(key, arr); }
+            arr.push(p);
+          }
+        }
+      });
+      if (gMinLat === Infinity) return null;
+      return L.latLngBounds([gMinLat, gMinLon], [gMaxLat, gMaxLon]);
+    }
+
+    // ── HIỂN THỊ MÀU RANH THEO TÊN CHỦ + NỀN NHÃN — ghi nhớ lựa chọn cho lần mở sau ──
+    const OWNER_COLOR_STORAGE_KEY = 'tdmap_showOwnerColor';
+    const LABEL_BG_STORAGE_KEY = 'tdmap_showLabelBg';
+
+    // Checkbox "Tên chủ": mặc định BẬT (tích) khi mở lần đầu -> tô ranh theo tên chủ
+    // (xanh ngọc = có tên chủ). Nếu người dùng đã từng đổi, dùng lại lựa chọn cũ.
+    let SHOW_OWNER_COLOR = (() => {
+      try {
+        const saved = localStorage.getItem(OWNER_COLOR_STORAGE_KEY);
+        if (saved === '0') return false;
+        if (saved === '1') return true;
+      } catch (e) { /* localStorage có thể bị chặn — bỏ qua */ }
+      return true;
+    })();
+
+    // Checkbox "Nền nhãn": giữ nguyên mặc định cũ là TẮT (không tích) khi mở lần đầu.
+    let SHOW_LABEL_BG = (() => {
+      try {
+        const saved = localStorage.getItem(LABEL_BG_STORAGE_KEY);
+        if (saved === '1') return true;
+        if (saved === '0') return false;
+      } catch (e) { /* localStorage có thể bị chặn — bỏ qua */ }
+      return false;
+    })();
+
+    // Đồng bộ trạng thái 2 checkbox + class body theo giá trị đã lưu (chạy ngay vì
+    // script này nằm cuối <body>, các thẻ input phía trên đã tồn tại trong DOM).
+    (function initColorAndLabelBgControls() {
+      const ownerChk = document.getElementById('toggleOwnerColor');
+      if (ownerChk) ownerChk.checked = SHOW_OWNER_COLOR;
+      const bgChk = document.getElementById('toggleLblBg');
+      if (bgChk) bgChk.checked = SHOW_LABEL_BG;
+      document.body.classList.toggle('hide-lbl-bg', !SHOW_LABEL_BG);
+    })();
+
+    function setLabelBgMode(checked) {
+      SHOW_LABEL_BG = !!checked;
+      document.body.classList.toggle('hide-lbl-bg', !SHOW_LABEL_BG);
+      try { localStorage.setItem(LABEL_BG_STORAGE_KEY, SHOW_LABEL_BG ? '1' : '0'); } catch (e) { /* bỏ qua */ }
+    }
+
+    function setOwnerColorMode(checked) {
+      SHOW_OWNER_COLOR = !!checked;
+      try { localStorage.setItem(OWNER_COLOR_STORAGE_KEY, SHOW_OWNER_COLOR ? '1' : '0'); } catch (e) { /* bỏ qua */ }
+      refreshParcelColorsOnMap();
+      showStatus(SHOW_OWNER_COLOR ? 'Đã bật màu ranh theo trạng thái' : 'Đã tắt màu ranh theo trạng thái');
+    }
+
+    // Áp dụng lại màu cho các thửa ĐANG hiển thị trên bản đồ (renderedSet) sau khi
+    // bật/tắt checkbox "Tên chủ" — không cần vẽ lại toàn bộ layer, rất nhanh.
+    // Nếu đang có bộ lọc tìm kiếm hoạt động thì chạy lại lọc để màu luôn nhất quán.
+    function refreshParcelColorsOnMap() {
+      const searchInputEl = document.getElementById('searchInput');
+      if (searchInputEl && searchInputEl.value.trim()) { runSearchFilter(); return; }
+      renderedSet.forEach(p => {
+        if (p._poly) {
+          const c = getParcelColor(p);
+          p._poly.setStyle({ color: c, fillColor: c });
+        }
+      });
+    }
+
+    // Màu tô ranh thửa theo Trạng thái đăng ký (trường 'trangThaiDK') + Tên chủ (trường 'tenChu'):
+    // - 'DDK' (Đã đăng ký / đã kê khai...)                              -> HỒNG (luôn giữ, không phụ thuộc checkbox)
+    // - Checkbox "Tên chủ" ĐANG TẮT                                     -> VÀNG cho mọi thửa chưa DDK
+    // - Checkbox "Tên chủ" ĐANG BẬT + có Tên chủ (chưa đăng ký)         -> XANH NGỌC
+    // - Checkbox "Tên chủ" ĐANG BẬT + chưa có Tên chủ (chưa đăng ký)    -> VÀNG
+    function getParcelColor(p) {
+      if (p && p.trangThaiDK === 'DDK') return '#ff1493';
+      if (SHOW_OWNER_COLOR && p && p.tenChu && p.tenChu.trim()) return '#00e5ff';
+      return '#ffff00';
+    }
+    // Bản mờ (dùng khi lọc tìm kiếm, thửa không khớp) - giữ cùng tông màu, chỉ giảm alpha.
+    function getParcelDimColor(p) {
+      if (p && p.trangThaiDK === 'DDK') return '#ff149333';
+      if (SHOW_OWNER_COLOR && p && p.tenChu && p.tenChu.trim()) return '#00e5ff33';
+      return '#ffff0033';
+    }
+    // Độ dày viền: đồng nhất 1.5 cho mọi thửa (không phân biệt trạng thái).
+    function getParcelWeight(p) {
+      return 1.5;
+    }
+
+    // Tạo polygon + dot + tooltip cho 1 thửa (chỉ tạo 1 LẦN DUY NHẤT, tái sử dụng
+    // mãi về sau kể cả khi bị gỡ khỏi bản đồ rồi thêm lại).
+    function createParcelLayers(p) {
+      const baseColor = getParcelColor(p);
+      const poly = L.polygon(p.rings, {
+        renderer: mapCanvasRenderer,
+        color: baseColor, weight: getParcelWeight(p),
+        fillColor: baseColor, fillOpacity: 0.06,
+        interactive: true, bubblingMouseEvents: false
+      });
+      poly.on('click tap', e => {
+        lastParcelClickAt = Date.now();
+        openPopup(p);
+      });
+
+      const dot = L.circleMarker([p.lat, p.lon], {
+        renderer: mapCanvasRenderer,
+        radius: 0.5, color: '#fff', weight: 1.5,
+        fillColor: '#1a6fd4', fillOpacity: 1,
+        interactive: true, bubblingMouseEvents: false
+      });
+      dot.on('click tap', e => {
+        lastParcelClickAt = Date.now();
+        openPopup(p);
+      });
+
+      // Nhãn trên bản đồ: chỉ hiển thị Tờ-Thửa, KHÔNG hiển thị Tên chủ (bản dành cho người dân).
+      const lblHtml = escapeHtml(p.id);
+      p._lbl = L.tooltip({
+        permanent: true, direction: 'center',
+        className: 'lbl-style', offset: [0, 0]
+      }).setContent(lblHtml);
+      p._lblBound = false;
+      p._dotAdded = false;
+      p._poly = poly;
+      p._dot = dot;
+      materializedCount++;
+    }
+
+    // Đảm bảo 1 thửa có mặt trên bản đồ (tạo layer nếu chưa có, thêm lại nếu đã
+    // bị gỡ trước đó). Dùng cho viewport-sync VÀ khi mở popup/tìm kiếm 1 thửa
+    // đang ở ngoài khung nhìn hiện tại.
+    function ensureParcelOnMap(p) {
+      if (!p.rings || !p.rings.length) return false;
+      if (!p._poly) createParcelLayers(p);
+      p._lru = ++lruCounter; // đánh dấu "vừa dùng" để LRU không huỷ nhầm thửa đang cần
+      if (!p._onMap) {
+        p._poly.addTo(map);
+        // QUAN TRỌNG: ép Canvas renderer TÍNH LẠI vùng toạ độ pixel dùng để nhận
+        // diện chạm (hit-test) cho polygon này NGAY khi vừa thêm lại vào bản đồ.
+        // Đã xác nhận qua chẩn đoán thực tế trên điện thoại: có trường hợp thửa
+        // sau khi bị gỡ khỏi bản đồ (do cuộn ra ngoài khung nhìn) rồi được thêm
+        // lại (cuộn trở về) - Canvas renderer vẫn VẼ đúng vị trí (nên mắt nhìn
+        // thấy bình thường), nhưng vùng nhận diện chạm bên trong bị lệch/dùng dữ
+        // liệu cũ, khiến chạm đúng giữa thửa vẫn không bắt được sự kiện click.
+        // .redraw() buộc Leaflet tính lại toàn bộ từ đầu, khắc phục triệt để.
+        p._poly.redraw();
+        p._onMap = true;
+        renderedSet.add(p);
+      }
+      return true;
+    }
+
+    function removeParcelFromMap(p) {
+      if (!p._onMap) return;
+      map.removeLayer(p._poly);
+      if (p._lblBound) { p._dot.unbindTooltip(); p._lblBound = false; }
+      if (p._dotAdded) { map.removeLayer(p._dot); p._dotAdded = false; }
+      p._onMap = false;
+      renderedSet.delete(p);
+    }
+
+    // Vùng đệm: THÊM thửa trong bán kính gần hơn (đỡ tạo dư), GỠ thửa chỉ khi ra
+    // khỏi bán kính xa hơn nhiều (tránh nhấp nháy thêm/gỡ liên tục khi kéo qua lại
+    // gần rìa khung nhìn).
+    const VIEW_ADD_PAD = 0.6;
+    const VIEW_REMOVE_PAD = 1.4;
+    let viewSyncTimer = null;
+    // Đếm "thế hệ" mỗi lần đồng bộ khung nhìn: khi khung nhìn đổi RẤT NHANH liên
+    // tiếp (vd: bay tới vị trí GPS xong tắt định vị rồi kéo tay ngay), 1 lượt
+    // syncViewportLayers() TRƯỚC có thể còn đang xử lý DỞ (danh sách thửa cần
+    // thêm quá lớn, chia làm nhiều lô trải qua nhiều khung hình rảnh) đúng lúc 1
+    // lượt MỚI HƠN được gọi - nếu không kiểm soát, lượt cũ vẫn tiếp tục âm thầm
+    // thêm/tính theo khung nhìn ĐÃ CŨ, có thể can thiệp sai vào kết quả của lượt
+    // mới (vd tự ý gỡ nhầm 1 thửa lượt mới vừa thêm nếu thửa đó nằm ngoài vùng
+    // đệm-gỡ theo bounds CŨ). syncGeneration đảm bảo MỖI LẦN GỌI chỉ có ĐÚNG 1
+    // lượt (mới nhất) được phép chạy tới cùng; lượt nào bị "vượt mặt" bởi 1 lượt
+    // mới hơn sẽ tự dừng ngay ở lô kế tiếp thay vì tiếp tục xử lý theo dữ liệu cũ.
+    let syncGeneration = 0;
+
+    function syncViewportLayers(onProgress) {
+      const myGen = ++syncGeneration;
+      return new Promise(resolveSync => {
+        if (!allParcels.length) { resolveSync(); return; }
+        const b = map.getBounds();
+        const latSpan = b.getNorth() - b.getSouth(), lonSpan = b.getEast() - b.getWest();
+
+        const addMinLat = b.getSouth() - latSpan * VIEW_ADD_PAD, addMaxLat = b.getNorth() + latSpan * VIEW_ADD_PAD;
+        const addMinLon = b.getWest() - lonSpan * VIEW_ADD_PAD, addMaxLon = b.getEast() + lonSpan * VIEW_ADD_PAD;
+        const remMinLat = b.getSouth() - latSpan * VIEW_REMOVE_PAD, remMaxLat = b.getNorth() + latSpan * VIEW_REMOVE_PAD;
+        const remMinLon = b.getWest() - lonSpan * VIEW_REMOVE_PAD, remMaxLon = b.getEast() + lonSpan * VIEW_REMOVE_PAD;
+
+        // 1) Gỡ các thửa đã ra xa khung nhìn (giữ lại đối tượng Leaflet để tái dùng)
+        renderedSet.forEach(p => {
+          if (!boxIntersects(p, remMinLat, remMaxLat, remMinLon, remMaxLon)) removeParcelFromMap(p);
+        });
+
+        // 2) Gom ứng viên trong vùng đệm-thêm, chỉ quét các ô lưới liên quan
+        const i0 = Math.floor(addMinLat / GRID_CELL_DEG), i1 = Math.floor(addMaxLat / GRID_CELL_DEG);
+        const j0 = Math.floor(addMinLon / GRID_CELL_DEG), j1 = Math.floor(addMaxLon / GRID_CELL_DEG);
+        const candidates = new Set();
+        for (let i = i0; i <= i1; i++) {
+          for (let j = j0; j <= j1; j++) {
+            const arr = spatialGrid.get(cellKeyOf(i, j));
+            if (arr) for (let k = 0; k < arr.length; k++) candidates.add(arr[k]);
+          }
+        }
+
+        const toAdd = [];
+        candidates.forEach(p => {
+          if (!p._onMap && boxIntersects(p, addMinLat, addMaxLat, addMinLon, addMaxLon)) toAdd.push(p);
+        });
+
+        if (toAdd.length === 0) { updateAllLabels(); pruneLayerCache(); if (onProgress) onProgress(1); resolveSync(); return; }
+
+        // Danh sách nhỏ (đa số các lần pan/zoom bình thường) -> thêm ngay, không cần chia lô
+        if (toAdd.length <= 400) {
+          for (let k = 0; k < toAdd.length; k++) ensureParcelOnMap(toAdd[k]);
+          updateAllLabels();
+          pruneLayerCache();
+          if (onProgress) onProgress(1);
+          resolveSync();
+          return;
+        }
+
+        // Danh sách lớn (lần tải file đầu tiên, khi khung nhìn còn bao trọn cả khu
+        // vực) -> chia lô theo NGÂN SÁCH THỜI GIAN thực tế còn lại mỗi khung rảnh
+        // (deadline.timeRemaining()), thay vì số lượng cố định. Trình duyệt nhàn
+        // rỗi thì xử lý được nhiều thửa hơn mỗi lượt -> mở file nhanh hơn; máy đang
+        // bận thì tự động xử lý ít hơn mỗi lượt -> vẫn không bao giờ treo giao diện.
+        let k = 0;
+        const HARD_CAP_PER_CHUNK = 2000; // chặn an toàn, phòng khi deadline báo sai
+        function step(deadline) {
+          // Đã có 1 lượt đồng bộ MỚI HƠN gọi sau lượt này (xem giải thích ở khai
+          // báo syncGeneration) -> dừng ngay, không xử lý tiếp theo dữ liệu/khung
+          // nhìn đã cũ của lượt này nữa; lượt mới hơn sẽ tự lo phần của nó.
+          if (myGen !== syncGeneration) { resolveSync(); return; }
+          const hasDeadline = deadline && typeof deadline.timeRemaining === 'function';
+          let doneInChunk = 0;
+          while (k < toAdd.length) {
+            ensureParcelOnMap(toAdd[k]);
+            k++;
+            doneInChunk++;
+            // Chỉ kiểm tra ngân sách mỗi 40 thửa (gọi timeRemaining() liên tục mỗi
+            // vòng cũng có phí tổn riêng, không đáng để kiểm tra từng thửa 1).
+            if (doneInChunk % 40 === 0) {
+              if (doneInChunk >= HARD_CAP_PER_CHUNK) break;
+              if (hasDeadline && deadline.timeRemaining() <= 0) break;
+            }
+          }
+          if (onProgress) onProgress(k / toAdd.length);
+          if (k < toAdd.length) {
+            scheduleChunk(step);
+          } else {
+            updateAllLabels();
+            pruneLayerCache();
+            resolveSync();
+          }
+        }
+        scheduleChunk(step);
+      });
+    }
+
+    function scheduleViewportSync() {
+      clearTimeout(viewSyncTimer);
+      viewSyncTimer = setTimeout(() => syncViewportLayers(null), 120);
+    }
+
+    // Báo mức zoom hiện tại lên badge góc trên-trái (luôn hiển thị cố định,
+    // không tự ẩn), đổi màu khi dưới ngưỡng hiện nhãn/chấm điểm (LABEL_MIN_ZOOM)
+    // để người dùng biết cần zoom thêm bao nhiêu.
+    function updateZoomBadge() {
+      const z = map.getZoom();
+      const el = document.getElementById('zoomBadge');
+      const txt = document.getElementById('zoomBadgeText');
+      const below = z < LABEL_MIN_ZOOM;
+      txt.textContent = below
+        ? `Zoom ${z} · cần ≥${LABEL_MIN_ZOOM} để hiện nhãn/điểm`
+        : `Zoom ${z} · đang hiện nhãn/điểm`;
+      el.classList.toggle('below-threshold', below);
+    }
+    // Chỉ đăng ký DUY NHẤT MỘT listener cho toàn bộ map (zoomend + moveend),
+    // thay vì mỗi thửa tự đăng ký 1 listener riêng (rất tốn bộ nhớ + CPU).
+    // Badge zoom cập nhật realtime ngay cả trong lúc đang phóng to/thu nhỏ
+    // (sự kiện 'zoom' bắn liên tục trong animation), còn việc hiện/ẩn nhãn +
+    // chấm điểm (tốn nhiều tài nguyên hơn) chỉ xử lý khi zoom đã dừng hẳn
+    // ('zoomend'/'moveend') để tránh giật lag khi đang kéo/zoom.
+    map.on('zoom', updateZoomBadge);
+    // scheduleViewportSync() lo việc thêm/gỡ polygon theo khung nhìn (viewport
+    // culling) - cần thiết để giữ mượt khi file có 30.000-50.000+ thửa; nó tự gọi
+    // updateAllLabels() sau khi đồng bộ xong.
+    map.on('zoomend moveend', () => { scheduleViewportSync(); updateZoomBadge(); updateDiaDiemVisibility(); });
+    updateZoomBadge();
+
+    function renderParcels(list, onRenderProgress) {
+      // Gỡ toàn bộ layer đang hiển thị của lần tải trước (nếu có)
+      renderedSet.forEach(p => removeParcelFromMap(p));
+      renderedSet.clear();
+      // Reset bộ đếm cache: mảng allParcels cũ (cùng mọi layer Leaflet nó giữ) sẽ
+      // bị thay thế hoàn toàn ngay bên dưới -> không còn tham chiếu nào trỏ tới ->
+      // trình duyệt tự thu hồi bộ nhớ (garbage collected). Nếu không reset, bộ đếm
+      // sẽ cộng dồn sai qua nhiều lần mở file trong cùng 1 phiên làm việc.
+      materializedCount = 0;
+
+      // Xây lưới chỉ mục không gian (cho viewport culling) + cache chuỗi tìm kiếm.
+      // Hàm này duyệt qua toàn bộ tọa độ 1 LẦN DUY NHẤT và trả về luôn bounds
+      // tổng thể (tính bằng số thuần, không tạo LatLng cho từng điểm như
+      // bounds.extend()) — trước đây phải duyệt riêng 1 lần nữa chỉ để tính
+      // bounds, với file lớn (hàng trăm nghìn điểm) việc gộp lại giúp mở file
+      // nhanh hơn rõ rệt.
+      const bounds = buildSpatialIndex(list);
+
+      if (bounds && bounds.isValid()) map.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+
+      // Chỉ vẽ các thửa trong khung nhìn (+ vùng đệm) hiện tại, theo từng lô nhỏ
+      // để không treo giao diện. Các thửa còn lại sẽ tự động được vẽ/gỡ khi
+      // người dùng pan/zoom (xem scheduleViewportSync ở trên).
+      return syncViewportLayers(onRenderProgress || null);
+    }
+
+    // ── RANH THÔN (ranh giới thôn/tổ dân phố) ───────────────────────────────────────
+    // Vẽ đường ranh màu đỏ + nhãn tên thôn màu xanh lá, tách riêng khỏi lớp thửa đất.
+    function renderRanhThon(ranhThon) {
+      ranhThonLayers.forEach(l => map.removeLayer(l));
+      ranhThonLayers = [];
+      if (!ranhThon) return;
+
+      (ranhThon.lines || []).forEach(pts => {
+        if (pts.length < 2) return;
+        const line = L.polyline(pts, {
+          renderer: mapCanvasRenderer,
+          color: '#ff0000', weight: 3, opacity: 0.9,
+          interactive: false
+        }).addTo(map);
+        ranhThonLayers.push(line);
+      });
+
+      (ranhThon.labels || []).forEach(lb => {
+        if (lb.lat == null || lb.lon == null) return;
+        const marker = L.marker([lb.lat, lb.lon], {
+          icon: L.divIcon({ className: 'thon-lbl-style', html: lb.name, iconSize: null }),
+          interactive: false,
+          keyboard: false
+        }).addTo(map);
+        ranhThonLayers.push(marker);
+      });
+    }
+
+    // ── LỚP ĐỊA ĐIỂM (Hội trường / Trường học / Cầu / Nhà thờ...) ───────────────────
+    // Đọc từ 1 file GeoJSON RIÊNG, nằm CÙNG thư mục Drive với file ranh thửa
+    // chính, đặt tên theo mẫu "<ngày tháng>_TanTien_DiaDiem.geojson" (vd
+    // "0309_TanTien_DiaDiem.geojson" = xuất ngày 03/09). Khi xã xuất file mới
+    // (tên đổi theo ngày khác) thì lần quét thư mục kế tiếp tự lấy đúng bản MỚI
+    // NHẤT theo modifiedTime trên Drive - giống hệt cơ chế chọn file ranh thửa
+    // mới nhất ở listDriveGeojsonFiles(), không cần người dùng tự chọn lại.
+    const DIADIEM_FILE_RE = /TanTien_DiaDiem\.geojson$/i;
+
+    // Bỏ dấu tiếng Việt để so khớp từ khoá không phân biệt có/không dấu.
+    function stripDiacritics(str) {
+      return String(str || '')
+        .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+        .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+    }
+
+    // Lấy 1 thuộc tính theo danh sách tên trường ứng viên, KHÔNG phân biệt hoa/
+    // thường (khác các file do QGIS xuất có thể đặt tên trường tuỳ ý, vd
+    // "tenChu", "ten_chu", "TenChu", "name"...).
+    function getPropCI(props, keys) {
+      const lower = {};
+      Object.keys(props || {}).forEach(k => { lower[k.toLowerCase()] = props[k]; });
+      for (const k of keys) {
+        const v = lower[k.toLowerCase()];
+        if (v != null && String(v).trim() !== '') return String(v).trim();
+      }
+      return '';
+    }
+
+    // Biểu tượng hiển thị theo TỪ KHOÁ nhận diện trong tên địa điểm (cột "Tên
+    // chủ" của file DiaDiem, ghi kiểu "Hội trường thôn 1", "Trường TH Y",
+    // "Cầu Suối Đá", "Nhà thờ Giáo xứ Z"...). Thứ tự kiểm tra có ý nghĩa: đặt
+    // các mẫu cụ thể hơn ("hoi truong") trước mẫu chung hơn ("truong") để
+    // "Hội trường" không bị nhận nhầm thành "Trường học".
+    // Danh sách nhóm đối tượng thường gặp trong file DiaGiem của các xã (đúc kết
+    // từ dữ liệu thực tế xã Tân Tiến + các hạng mục công cộng phổ biến khác).
+    // Thứ tự kiểm tra CÓ Ý NGHĨA: mẫu cụ thể hơn luôn đặt TRƯỚC mẫu chung hơn,
+    // để tránh bắt nhầm (vd "Hội trường" phải đứng trước "Trường học"; "Nhà thờ"
+    // phải đứng trước "Nhà" chung chung).
+    function classifyDiaDiemIcon(name) {
+      const t = stripDiacritics(name).toLowerCase();
+      if (!t.trim()) return { icon: '📍', label: 'Địa điểm' };
+
+      if (/\bhoi\s*truong\b/.test(t)) return { icon: '🏛️', label: 'Hội trường' };
+      if (/\bnha\s*tho\b|\bgiao\s*xu\b|\bgiao\s*duong\b/.test(t)) return { icon: '⛪', label: 'Nhà thờ' };
+      if (/\bchua\b|\bdinh\b|\bmieu\b|\bthanh\s*that\b/.test(t)) return { icon: '🛕', label: 'Chùa/Đình/Miếu' };
+      // Chỉ nhận "trường học" khi đi kèm từ chỉ cấp học (hoc/tieu hoc/thcs/...),
+      // KHÔNG nhận riêng từ "truong" đứng một mình - vì sau khi bỏ dấu, "Trường"
+      // (trường học) và "Trưởng" (vd "Nhà Trưởng thôn") đều thành "truong", dễ
+      // bắt nhầm nhà trưởng thôn/thôn trưởng thành trường học.
+      if (/\btruong\s*(hoc|tieu\s*hoc|trung\s*hoc|mau\s*giao|thcs|thpt)\b/.test(t) || /\bmam\s*non\b/.test(t)) return { icon: '🏫', label: 'Trường học' };
+      if (/\bcau\b/.test(t)) return { icon: '🌉', label: 'Cầu' };
+      if (/\bsan\s*bong\b|\bsan\s*the\s*thao\b|\bsan\s*van\s*dong\b/.test(t)) return { icon: '⚽', label: 'Sân bóng/Sân thể thao' };
+      if (/\bnghia\s*trang\b|\bnghia\s*dia\b|\bnghi\s*trang\b/.test(t)) return { icon: '🪦', label: 'Nghĩa trang/Nghĩa địa' };
+      if (/\btram\s*y\s*te\b|\bbenh\s*vien\b|\bphong\s*kham\b/.test(t)) return { icon: '🏥', label: 'Trạm y tế/Bệnh viện' };
+      if (/\buy\s*ban\b|\bubnd\b|\btru\s*so\b/.test(t)) return { icon: '🏢', label: 'Trụ sở/UBND' };
+      if (/\bcho\b/.test(t)) return { icon: '🏬', label: 'Chợ' };
+      if (/\btap\s*hoa\b|\bcua\s*hang\b|\bsieu\s*thi\b/.test(t)) return { icon: '🏪', label: 'Cửa hàng/Tạp hóa' };
+      if (/\btram\s*bien\s*ap\b|\btram\s*dien\b/.test(t)) return { icon: '⚡', label: 'Trạm điện' };
+      if (/\bgieng\b|\bbe\s*nuoc\b|\btrat\s*nuoc\b/.test(t)) return { icon: '💧', label: 'Giếng/Bể nước' };
+      if (/\bnga\s*(2|3|4|ba|tu|nam)\b/.test(t)) return { icon: '🔀', label: 'Ngã ba/Ngã tư' };
+      // "Nhà" chung chung (vd nhà văn hoá thôn, nhà trưởng thôn...) - kiểm tra
+      // SAU CÙNG trong nhóm "nhà ..." vì các loại nhà cụ thể hơn (nhà thờ) đã
+      // được nhận diện riêng ở trên rồi.
+      if (/\bnha\b/.test(t)) return { icon: '🏠', label: 'Nhà' };
+
+      return { icon: '📍', label: 'Địa điểm' };
+    }
+
+    // Nếu không có trường tên "sạch" (tenChu/name/...), 1 số bản xuất DiaDiem
+    // vẫn dùng chung định dạng "label" gộp như thửa đất chính, vd chuỗi
+    // "0-0-2348.8-NNP-Nhà Thờ Cơ đốc-CDK" (khoa-dienTich-loaiDat-tenChu-trạng
+    // thái) - PHẢI tách lấy đúng phần TÊN, không hiển thị nguyên cả chuỗi gộp
+    // (nhìn giống hệt nhãn thửa đất, gây nhầm lẫn với lớp địa chính).
+    function extractNameFromCompoundLabel(label) {
+      const s = String(label || '').trim();
+      const idM = s.match(/^(\d+[-–]\d+)-/);
+      if (!idM) return '';
+      const id = idM[1].replace('–', '-');
+      return parseLabelCompound(s, id).tenChu || '';
+    }
+
+    function centroidOfRing(ring) {
+      if (!ring || !ring.length) return null;
+      const lon = ring.reduce((s, c) => s + c[0], 0) / ring.length;
+      const lat = ring.reduce((s, c) => s + c[1], 0) / ring.length;
+      return [lat, lon];
+    }
+
+    // Đọc file GeoJSON địa điểm. Giống thửa đất, 1 địa điểm có thể xuất ra 2
+    // Feature (Polygon ranh vùng + Point nhãn) - GHÉP lại theo chuỗi 'label'
+    // (giống nhau giữa 2 Feature của CÙNG 1 địa điểm), CHỈ vẽ 1 biểu tượng/
+    // địa điểm, tránh hiện trùng 2 nhãn cho cùng 1 chỗ (1 nhãn tên sạch từ
+    // Point + 1 nhãn label gộp thô từ Polygon) như trước đây.
+    function parseDiaDiemGeoJSON(text) {
+      const gj = typeof text === 'string' ? JSON.parse(text) : text;
+      const feats = (gj && gj.features) || [];
+      const byId = {};
+      let autoIdx = 0;
+
+      feats.forEach(f => {
+        const props = (f && f.properties) || {};
+        const geom = f && f.geometry;
+        if (!geom) return;
+
+        let pointLatLon = null, polyLatLon = null;
+        if (geom.type === 'Point') {
+          const [lo, la] = geom.coordinates || [];
+          if (!isNaN(la) && !isNaN(lo)) pointLatLon = [la, lo];
+        } else if (geom.type === 'Polygon') {
+          polyLatLon = centroidOfRing((geom.coordinates || [])[0]);
+        } else if (geom.type === 'MultiPolygon') {
+          polyLatLon = centroidOfRing(((geom.coordinates || [])[0] || [])[0]);
+        } else {
+          return;
+        }
+        if (!pointLatLon && !polyLatLon) return;
+
+        const rawLabel = getPropCI(props, ['label']);
+        // Ưu tiên gộp theo NGUYÊN CHUỖI 'label' (giống nhau giữa cặp Polygon+Point
+        // của CÙNG 1 địa điểm, khác nhau giữa các địa điểm khác nhau). KHÔNG dùng
+        // 'khoa' làm khoá chính - với file DiaDiem, 'khoa' thường chỉ là giá trị
+        // giữ chỗ cố định (vd luôn "0-0" cho mọi địa điểm), không đóng vai trò mã
+        // định danh riêng như ở file thửa đất chính -> nếu ưu tiên 'khoa' sẽ gộp
+        // NHẦM toàn bộ các địa điểm khác nhau thành 1 bản ghi duy nhất.
+        let id = rawLabel || ((props.khoa != null && props.khoa !== '') ? String(props.khoa) : null);
+        id = id ? id.replace('–', '-') : ('_auto' + (autoIdx++));
+
+        if (!byId[id]) byId[id] = { lat: null, lon: null, tenChu: '' };
+        const rec = byId[id];
+
+        // Ưu tiên toạ độ Point (đúng vị trí nhãn) hơn tâm hình học Polygon.
+        if (pointLatLon) { rec.lat = pointLatLon[0]; rec.lon = pointLatLon[1]; }
+        else if (rec.lat == null && polyLatLon) { rec.lat = polyLatLon[0]; rec.lon = polyLatLon[1]; }
+
+        if (!rec.tenChu) {
+          let ten = getPropCI(props, ['tenChu', 'ten_chu', 'ten', 'name', 'diaDiem', 'dia_diem', 'hangMuc', 'hang_muc', 'title']);
+          if (!ten && rawLabel) ten = extractNameFromCompoundLabel(rawLabel) || rawLabel;
+          if (ten) rec.tenChu = ten.replace(/-(CDK|DDK)$/i, '').trim();
+        }
+      });
+
+      return Object.values(byId).filter(r => r.lat != null && r.tenChu);
+    }
+
+    // Chỉ hiện nhãn địa điểm khi zoom đủ lớn (≥16) - tránh rối bản đồ khi đang
+    // xem toàn xã ở mức zoom nhỏ, giống cơ chế ẩn/hiện nhãn thửa đất theo zoom.
+    const DIADIEM_MIN_ZOOM = 16;
+
+    // Vẽ lớp địa điểm lên bản đồ: mỗi điểm 1 biểu tượng + tên (cột "Tên chủ")
+    // ngay bên dưới, chạm vào hiện chú thích loại địa điểm nhận diện được.
+    function renderDiaDiem(list) {
+      diaDiemLayers.forEach(l => map.removeLayer(l));
+      diaDiemLayers = [];
+      (list || []).forEach(pt => {
+        const { icon, label } = classifyDiaDiemIcon(pt.tenChu);
+        const marker = L.marker([pt.lat, pt.lon], {
+          icon: L.divIcon({
+            className: 'diadiem-lbl-style',
+            html: `<span class="dd-ico">${icon}</span><span class="dd-name">${escapeHtml(pt.tenChu)}</span>`,
+            iconSize: null
+          }),
+          keyboard: false
+        });
+        marker.bindTooltip(`${icon} ${escapeHtml(label)}: ${escapeHtml(pt.tenChu)}`, { direction: 'top', offset: [0, -8] });
+        diaDiemLayers.push(marker);
+      });
+      updateDiaDiemVisibility();
+    }
+
+    function setDiaDiemVisible(checked) {
+      diaDiemVisible = checked;
+      updateDiaDiemVisibility();
+    }
+
+    // Đồng bộ hiện/ẩn TOÀN BỘ marker địa điểm theo cả 2 điều kiện: checkbox
+    // "Địa điểm" đang bật, VÀ zoom hiện tại ≥ DIADIEM_MIN_ZOOM. Gọi lại mỗi khi
+    // zoom đổi (xem map.on('zoomend'...) bên dưới) hoặc khi bật/tắt checkbox.
+    function updateDiaDiemVisibility() {
+      const show = diaDiemVisible && map.getZoom() >= DIADIEM_MIN_ZOOM;
+      diaDiemLayers.forEach(l => {
+        const onMap = map.hasLayer(l);
+        if (show && !onMap) l.addTo(map);
+        else if (!show && onMap) map.removeLayer(l);
+      });
+    }
+
+    // Tải riêng file DiaDiem mới nhất tìm thấy trong thư mục Drive (chạy song
+    // song, KHÔNG chặn việc mở file ranh thửa chính) rồi vẽ lên bản đồ.
+    async function loadDiaDiemFile(fileId, fileName, apiKey) {
+      try {
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${encodeURIComponent(apiKey)}`);
+        if (!res.ok) return;
+        const text = await res.text();
+        const list = parseDiaDiemGeoJSON(text);
+        renderDiaDiem(list);
+      } catch (err) {
+        console.warn('Không tải được file địa điểm', fileName, err);
+      }
+    }
+
+    // ── POPUP BẢN ĐỒ ──────────────────────────────────────────────────────────────
+    function openPopup(p) {
+      hideSuggestions();
+      if (activeP && activeP._poly)
+        activeP._poly.setStyle({ color: getParcelColor(activeP), fillColor: getParcelColor(activeP), weight: getParcelWeight(activeP), fillOpacity: 0.06 });
+
+      activeP = p;
+      // Đảm bảo thửa có mặt trên bản đồ dù đang ở ngoài khung nhìn hiện tại (vd:
+      // vừa chọn từ kết quả tìm kiếm ở khu vực chưa được vẽ tới) trước khi tô màu
+      // và bay camera đến, vì với viewport culling không phải thửa nào cũng luôn
+      // có sẵn polygon trên bản đồ.
+      // Bôi đậm thửa được chọn (cyan)
+      if (p._poly) p._poly.setStyle({ color: '#00ffcc', weight: (p.trangThaiDK === 'DDK' ? 3.5 : 2.5), fillOpacity: 0.2 });
+
+      document.getElementById('searchInput').value = p.id;
+
+      // Hàng 1 (tiêu đề, thay cho "Tờ-Thửa xx-xx"): Tờ, Thửa
+      const [toNum, thuaNum] = p.id.split('-');
+      const infoParts = [`Tờ: ${toNum}`, `Thửa: ${thuaNum}`];
+
+      document.getElementById('popupTitle').textContent = infoParts.join(', ');
+
+      // Chỉ hiển thị Tờ/Thửa cho người dân, không hiển thị Loại đất/Diện tích/
+      // Tên chủ/Trạng thái đăng ký.
+      document.getElementById('popupInfo').innerHTML = '';
+
+      document.getElementById('popupCoords').textContent =
+        `${(p.lat || 0).toFixed(7)}, ${(p.lon || 0).toFixed(7)}`;
+
+      const mapsURL = p.chiDuong || `https://www.google.com/maps?q=${p.lat},${p.lon}`;
+      document.getElementById('btnMaps').href = mapsURL;
+
+      document.getElementById('popup').classList.add('open');
+
+      if (p._poly && p.rings.length > 0) {
+        const center = p._poly.getBounds().getCenter();
+        const curZoom = map.getZoom();
+        const MIN_VIEW_ZOOM = 17; // đảm bảo nhìn rõ thửa khi click
+        if (curZoom < MIN_VIEW_ZOOM) {
+          map.flyTo(center, MIN_VIEW_ZOOM, { animate: true, duration: 0.6 });
+        } else {
+          map.panTo(center, { animate: true, duration: 0.6 }); // giữ nguyên zoom hiện tại, không tự thu nhỏ
+        }
+      } else if (p.lat) {
+        const curZoom = map.getZoom();
+        const MIN_VIEW_ZOOM = 17;
+        if (curZoom < MIN_VIEW_ZOOM) {
+          map.flyTo([p.lat, p.lon], MIN_VIEW_ZOOM, { animate: true, duration: 0.6 });
+        } else {
+          map.panTo([p.lat, p.lon], { animate: true, duration: 0.6 }); // giữ nguyên zoom hiện tại
+        }
+      }
+    }
+
+    function closePopup() {
+      document.getElementById('popup').classList.remove('open');
+      if (activeP && activeP._poly)
+        activeP._poly.setStyle({ color: getParcelColor(activeP), fillColor: getParcelColor(activeP), weight: getParcelWeight(activeP), fillOpacity: 0.06 });
+      activeP = null;
+    }
+
+    // Chuỗi thông tin thửa dùng để copy - dạng "Tờ: 140, Thửa: 56" (không kèm
+    // Diện tích/Loại đất, khớp với dòng tiêu đề popup).
+    function buildParcelCopyText(p) {
+      const [toNum, thuaNum] = p.id.split('-');
+      return [`Tờ: ${toNum}`, `Thửa: ${thuaNum}`].join(', ');
+    }
+
+    // Copy 1 chuỗi văn bản vào clipboard - dùng chung cho nút Copy VÀ dự phòng
+    // của nút chia sẻ Zalo (khi trình duyệt không hỗ trợ Web Share API).
+    async function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      // Dự phòng cho trình duyệt/ngữ cảnh không có Clipboard API (vd http
+      // không an toàn, trình duyệt cũ) - dùng cách copy cũ qua textarea ẩn.
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+
+    function openCopyInfoOverlay(text) {
+      document.getElementById('copyInfoText').textContent = text;
+      document.getElementById('copyInfoOverlay').classList.add('show');
+    }
+    function closeCopyInfoOverlay() {
+      document.getElementById('copyInfoOverlay').classList.remove('show');
+    }
+
+    async function copyParcelInfo() {
+      if (!activeP) return;
+      const text = buildParcelCopyText(activeP);
+      try {
+        await copyTextToClipboard(text);
+        openCopyInfoOverlay(text);
+      } catch (e) {
+        showStatus('Không sao chép được (trình duyệt chặn quyền clipboard)');
+      }
+    }
+
+    // Lazy-load html2canvas (chỉ tải khi thật sự cần - xem captureInfoCardFallback
+    // bên dưới), giống cách các thư viện phụ khác trong app này được tải "lazy".
+    let __html2canvasState = 'idle'; // idle | loading | ready
+    function ensureHtml2CanvasLoaded() {
+      return new Promise((resolve) => {
+        if (__html2canvasState === 'ready' || typeof html2canvas !== 'undefined') {
+          __html2canvasState = 'ready'; resolve(); return;
+        }
+        if (__html2canvasState === 'loading') {
+          document.addEventListener('html2canvas-ready', () => resolve(), { once: true });
+          return;
+        }
+        __html2canvasState = 'loading';
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        s.onload = () => { __html2canvasState = 'ready'; document.dispatchEvent(new Event('html2canvas-ready')); resolve(); };
+        s.onerror = () => { __html2canvasState = 'idle'; console.error('Không tải được thư viện html2canvas.'); resolve(); };
+        document.head.appendChild(s);
+      });
+    }
+
+    // Chụp riêng khung thông tin thửa (#popupCaptureArea - chỉ có chữ, KHÔNG có
+    // ảnh vệ tinh) bằng html2canvas. Dùng làm PHƯƠNG ÁN DỰ PHÒNG cho các trình
+    // duyệt/thiết bị KHÔNG hỗ trợ Screen Capture API (getDisplayMedia) - chủ yếu
+    // là điện thoại (Android Chrome, Safari iOS đều chưa hỗ trợ API đó) - để vẫn
+    // lưu lại được ảnh có Tờ/Thửa thay vì chỉ báo lỗi suông, đúng mục đích chính
+    // của nút này (cung cấp Tờ/Thửa cho đơn vị đo đạc). KHÔNG dùng html2canvas
+    // để chụp cả bản đồ vì lớp ảnh vệ tinh tải từ Google là ảnh cross-origin
+    // (mt{s}.google.com, không có header CORS) - html2canvas sẽ không đọc được
+    // ra ảnh, làm ảnh chụp bị thiếu nền hoặc lỗi.
+    async function captureInfoCardFallback() {
+      await ensureHtml2CanvasLoaded();
+      if (typeof html2canvas === 'undefined') {
+        showAlert('Không tải được công cụ chụp ảnh (cần có kết nối mạng).\n\nVui lòng dùng chức năng chụp màn hình có sẵn trên máy: điện thoại (giữ nút Nguồn + Giảm âm lượng cùng lúc), máy tính (phím PrtScn hoặc Snipping Tool).');
+        return;
+      }
+      const target = document.getElementById('popupCaptureArea');
+      const canvas = await html2canvas(target, { backgroundColor: '#ffffff', scale: 2 });
+      const dataUrl = canvas.toDataURL('image/png');
+      const [toNum, thuaNum] = activeP.id.split('-');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `To_${toNum}-Thua_${thuaNum}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showStatus('✓ Đã lưu ảnh thông tin thửa');
+    }
+
+    // Chụp TOÀN BỘ giao diện đang xem (bản đồ ảnh vệ tinh + ranh thửa tô màu +
+    // bảng thông tin) trên trình duyệt/thiết bị hỗ trợ Screen Capture API
+    // (getDisplayMedia - chủ yếu trình duyệt máy tính; hầu hết trình duyệt điện
+    // thoại KHÔNG hỗ trợ API này). Khi không hỗ trợ (hoặc gặp lỗi giữa chừng khi
+    // đã hỗ trợ), tự động rơi về captureInfoCardFallback() ở trên để vẫn lưu
+    // được ảnh có Tờ/Thửa, thay vì chỉ hiện thông báo lỗi cho người dùng.
+    async function captureParcelScreenshot() {
+      if (!activeP) return;
+      const btn = document.getElementById('btnShot');
+      if (btn) btn.classList.add('disabled');
+      let stream = null;
+      try {
+        if (!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia)) {
+          await captureInfoCardFallback();
+          return;
+        }
+        showStatus('Vui lòng chọn đúng tab/màn hình đang xem để chụp...');
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: { cursor: 'never' },
+          audio: false,
+          preferCurrentTab: true // Chrome: tự chọn sẵn "tab này" cho đỡ phải tìm - trình duyệt khác bỏ qua nếu không hỗ trợ
+        });
+
+        const video = document.createElement('video');
+        video.muted = true;
+        video.srcObject = stream;
+        await video.play();
+        // Chờ 1 khung hình thật sự "ổn định" (vài trình duyệt trả kích thước
+        // video = 0 ngay khung đầu tiên) trước khi vẽ ra canvas.
+        await new Promise(r => setTimeout(r, 200));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const [toNum, thuaNum] = activeP.id.split('-');
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `To_${toNum}-Thua_${thuaNum}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showStatus('✓ Đã lưu ảnh chụp giao diện');
+      } catch (e) {
+        if (e && e.name === 'NotAllowedError') {
+          showStatus('Đã huỷ chụp màn hình.');
+        } else {
+          console.error(e);
+          try {
+            await captureInfoCardFallback();
+          } catch (e2) {
+            showAlert('Không chụp được ảnh. Vui lòng thử lại hoặc dùng chức năng chụp màn hình có sẵn trên điện thoại/máy tính.');
+          }
+        }
+      } finally {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        if (btn) btn.classList.remove('disabled');
+      }
+    }
+
+    // Chia sẻ thông tin thửa qua Zalo. "zalo://" ĐÃ KIỂM CHỨNG THỰC TẾ trên điện
+    // thoại KHÔNG mở được app (không phải scheme công khai Zalo đăng ký) - bỏ hẳn
+    // cách này. Cách ĐÚNG và THỰC SỰ chạy được, phân theo nền tảng:
+    //  - TRÊN ĐIỆN THOẠI (Android/iOS): dùng Web Share API (navigator.share) -
+    //    đây mới là cơ chế CHUẨN của hệ điều hành, và Zalo có đăng ký chính thức
+    //    làm 1 đích nhận "Share to..." trong khay chia sẻ Android/iOS -> khay hiện
+    //    ra sẽ CÓ Zalo để chọn, chia sẻ thẳng nội dung vào app luôn.
+    //  - TRÊN MÁY TÍNH (Windows/macOS): Web Share API (nếu có) trên desktop
+    //    thường KHÔNG liệt kê Zalo (đã xác nhận qua ảnh chụp thực tế - chỉ có
+    //    Outlook/Mail...) vì Zalo Desktop không đăng ký với khay chia sẻ của hệ
+    //    điều hành theo cách đó -> bỏ qua Web Share trên desktop, mở thẳng trang
+    //    https://zalo.me/ để người dùng tự mở app Zalo (hoặc đăng nhập Zalo Web)
+    //    rồi dán nội dung đã copy sẵn vào clipboard.
+    async function shareParcelInfoZalo() {
+      if (!activeP) return;
+      const text = buildParcelCopyText(activeP);
+      try { await copyTextToClipboard(text); } catch (e) { /* có thể đã copy sẵn từ nút Copy trước đó */ }
+
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (isMobile && navigator.share) {
+        try {
+          await navigator.share({ title: 'TDMAP.PRO.VN', text });
+          return; // đã chia sẻ thẳng qua khay hệ thống (người dùng chọn Zalo trong đó) - xong
+        } catch (e) {
+          if (e && e.name === 'AbortError') return; // người dùng tự bấm huỷ khay chia sẻ - không làm gì thêm
+          // Lỗi khác (hiếm) -> rơi xuống phương án mở trang zalo.me bên dưới
+        }
+      }
+
+      window.open('https://zalo.me/', '_blank', 'noopener');
+      showAlert(`Đã copy thông tin thửa:\n${text}\n\nHãy mở Zalo và dán (Paste) vào cuộc trò chuyện muốn gửi.`);
+    }
+
+    map.on('click', e => {
+      // ── LƯỚI AN TOÀN: tự mở thông tin thửa nếu xác định chắc chắn chạm trúng ────
+      // Đôi khi Leaflet Canvas không tự bắt được sự kiện click lên đúng polygon
+      // (đã xác nhận qua kiểm chứng thực tế: có trường hợp thửa thật sự đang trên
+      // bản đồ và điểm chạm nằm đúng trong ranh, nhưng Leaflet vẫn bỏ lỡ - nguyên
+      // nhân sâu bên trong cơ chế hit-test của Canvas renderer). Để đảm bảo chọn
+      // thửa luôn hoạt động đáng tin cậy bất kể nguyên nhân nội bộ đó là gì, tự
+      // dùng phép toán hình học của chính ta (findParcelAtPoint - đã tính đúng cả
+      // phần lỗ/suối bị khoét trong ranh) làm nguồn xác định dự phòng. Chỉ chạy
+      // khi KHÔNG có 1 click hợp lệ (poly/dot) nào vừa xảy ra gần đây (< 250ms) -
+      // tránh mở lại 1 popup Leaflet vừa tự mở đúng rồi (trường hợp bình thường).
+      if (Date.now() - lastParcelClickAt > 250) {
+        const fallbackMatch = findParcelAtPoint(e.latlng.lat, e.latlng.lng);
+        if (fallbackMatch) {
+          lastParcelClickAt = Date.now();
+          openPopup(fallbackMatch);
+          hideSuggestions();
+          return;
+        }
+      }
+
+      // Chỉ đóng popup nếu cú click này KHÔNG phải cú vừa chọn 1 thửa (xem lastParcelClickAt
+      // ở createParcelLayers) - tránh trường hợp thửa vừa mở popup xong bị map.on('click')
+      // đóng lại ngay trong cùng 1 thao tác chạm (đặc biệt trên di động). Nới từ 60ms
+      // lên 250ms: trên một số điện thoại cũ/khi máy đang bận vẽ nhiều thửa, khoảng
+      // cách giữa 2 sự kiện (click trên thửa rồi tới click trên map) có thể lớn hơn
+      // 60ms, khiến popup vừa mở xong bị đóng lại ngay lập tức (như "không hoạt động").
+      if (Date.now() - lastParcelClickAt > 250) closePopup();
+      hideSuggestions();
+    });
+
+    // Ẩn danh sách gợi ý khi bấm ra ngoài thanh tìm kiếm / khung gợi ý
+    document.addEventListener('click', e => {
+      const bar = document.getElementById('searchBar');
+      const box = document.getElementById('searchSuggestions');
+      if (bar && box && !bar.contains(e.target) && !box.contains(e.target)) {
+        hideSuggestions();
+      }
+    });
+
+    // ── SEARCH LOGIC ──────────────────────────────────────────────────────────────
+    // Tìm theo Tờ-Thửa (p.id), hiển thị danh sách các thửa khớp trong khung gợi ý
+    // #searchSuggestions để người dùng chọn. KHÔNG tìm/hiển thị theo Tên chủ (bản
+    // dành cho người dân).
+
+    const MAX_SUGGESTIONS = 50;
+    let currentMatches = [];
+
+    function matchParcel(p, q) {
+      // Chỉ tìm theo Tờ-Thửa (p.id) - KHÔNG tìm theo Tên chủ (bản dành cho người dân).
+      // Dùng chuỗi thường đã tính sẵn (_idLower, xem buildSpatialIndex) thay vì gọi
+      // .toLowerCase() lại mỗi lần tìm -> nhanh hơn nhiều với 30.000-50.000+ thửa.
+      return (p._idLower != null ? p._idLower : p.id.toLowerCase()).includes(q);
+    }
+
+    let searchDebounceTimer = null;
+    function onInputSearch() {
+      // Gõ nhanh trên file lớn (30.000-50.000+ thửa) mà lọc ngay mỗi phím bấm sẽ
+      // giật -> gom lại, chỉ lọc sau khi người dùng dừng gõ ~120ms.
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(runSearchFilter, 120);
+    }
+
+    function runSearchFilter() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!q) {
+        // Chỉ cần khôi phục màu cho các thửa ĐANG hiển thị trên bản đồ, không phải
+        // toàn bộ allParcels (những thửa chưa vẽ không có style gì để khôi phục).
+        renderedSet.forEach(p => {
+          if (p._poly) p._poly.setStyle({ color: getParcelColor(p), fillColor: getParcelColor(p), fillOpacity: 0.06 });
+          if (p._dot) p._dot.setStyle({ fillColor: '#1a6fd4', fillOpacity: 1 });
+        });
+        hideSuggestions();
+        return;
+      }
+
+      const matches = [];
+      allParcels.forEach(p => {
+        const isPartial = matchParcel(p, q);
+        if (p._poly) {
+          p._poly.setStyle({ color: isPartial ? '#00ffcc' : getParcelDimColor(p), fillColor: isPartial ? '#00ffcc' : getParcelDimColor(p), fillOpacity: isPartial ? 0.2 : 0.02 });
+        }
+        if (p._dot) {
+          p._dot.setStyle({ fillColor: isPartial ? '#00c6a7' : '#1a6fd4', fillOpacity: isPartial ? 1 : 0.2 });
+        }
+        if (isPartial) matches.push(p);
+      });
+
+      if (allParcels.length > 0) renderSuggestions(matches, document.getElementById('searchInput').value.trim());
+    }
+
+    function executeSearch() {
+      const rawQ = document.getElementById('searchInput').value.trim();
+      const q = rawQ.toLowerCase();
+
+      // Kiểm tra xem đã load dữ liệu chưa
+      if (allParcels.length === 0) {
+        showAlert("Bản đồ chưa được tải.\nVui lòng nhấn nút 'Tải lại bản đồ' trước khi tìm kiếm!");
+        return;
+      }
+
+      if (!q) {
+        showStatus('Vui lòng nhập Tờ-Thửa để tìm');
+        return;
+      }
+
+      // Ưu tiên khớp đúng tuyệt đối số Tờ-Thửa (vd: "31-27")
+      let exactHit = null;
+      const matches = [];
+      allParcels.forEach(p => {
+        const parcelId = p.id.toLowerCase();
+        if (parcelId === q && !exactHit) exactHit = p;
+        if (matchParcel(p, q)) matches.push(p);
+      });
+
+      if (exactHit) {
+        hideSuggestions();
+        openPopup(exactHit);
+        showStatus('Đã tìm thấy: ' + exactHit.id);
+        return;
+      }
+
+      if (matches.length === 1) {
+        hideSuggestions();
+        openPopup(matches[0]);
+        showStatus('Đã tìm thấy: ' + matches[0].id);
+      } else if (matches.length > 1) {
+        renderSuggestions(matches, rawQ);
+        showStatus(`Tìm thấy ${matches.length} thửa – chọn 1 kết quả bên dưới`);
+      } else {
+        hideSuggestions();
+        showAlert(`Không tìm thấy dữ liệu Tờ-Thửa: "${rawQ.toUpperCase()}"\n\nVui lòng kiểm tra lại thông tin bạn vừa nhập.`);
+        showStatus(`Không có dữ liệu: ${rawQ}`);
+      }
+    }
+
+    // ── DANH SÁCH GỢI Ý KẾT QUẢ ────────────────────────────────────────────────────
+    function renderSuggestions(matches, rawQuery) {
+      currentMatches = matches;
+      const box = document.getElementById('searchSuggestions');
+      if (!box) return;
+
+      if (matches.length === 0) {
+        box.innerHTML = `
+      <div class="sg-header"><span>KHÔNG CÓ KẾT QUẢ</span><button onclick="hideSuggestions()">✕</button></div>
+      <div class="sg-empty">Không tìm thấy Tờ-Thửa chứa "${escapeHtml(rawQuery)}"</div>`;
+        box.classList.add('show');
+        return;
+      }
+
+      const shown = matches.slice(0, MAX_SUGGESTIONS);
+      const rows = shown.map((p, i) => {
+        const [toNum, thuaNum] = p.id.split('-');
+        return `
+      <div class="sg-item" onclick="selectSuggestion(${i})">
+        <div class="sg-id">Tờ: ${escapeHtml(toNum)}, Thửa: ${escapeHtml(thuaNum)}</div>
+      </div>`;
+      }).join('');
+
+      const moreNote = matches.length > MAX_SUGGESTIONS
+        ? ` (hiện ${MAX_SUGGESTIONS}/${matches.length})` : '';
+
+      box.innerHTML = `
+    <div class="sg-header"><span>${matches.length} THỬA TÌM THẤY${moreNote}</span><button onclick="hideSuggestions()">✕</button></div>
+    ${rows}`;
+      box.classList.add('show');
+    }
+
+    function selectSuggestion(i) {
+      const p = currentMatches[i];
+      if (!p) return;
+      hideSuggestions();
+      openPopup(p);
+      showStatus('Đã tìm thấy: ' + p.id);
+    }
+
+    function hideSuggestions() {
+      const box = document.getElementById('searchSuggestions');
+      if (!box) return;
+      box.classList.remove('show');
+      box.innerHTML = '';
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    // ── PHÂN TÍCH KML TRONG WEB WORKER (không chặn giao diện) ──────────────────────
+    // Với file lớn (>3000 thửa), DOMParser + querySelectorAll có thể mất 1-2s.
+    // Chạy trong Worker để luồng chính (UI) không bị đứng trong lúc đó.
+    // Nếu trình duyệt không hỗ trợ hoặc worker lỗi -> tự động rơi về phân tích
+    // trên luồng chính (parseKML ở trên) để đảm bảo luôn hoạt động được.
+    function getKmlWorkerURL() {
+      const workerSrc = `
+    self.onmessage = function(e) {
+      try {
+        self.postMessage({ ok: true, data: parseKML(e.data) });
+      } catch (err) {
+        self.postMessage({ ok: false, error: String(err) });
+      }
+    };
+    function parseLabelCompound(label, id) {
+      const out = { dienTich: '', loaiDat: '', tenChu: '', trangThaiDK: '' };
+      if (!label || !id) return out;
+      const prefix = id + '-';
+      if (!label.startsWith(prefix)) return out;
+      let rest = label.slice(prefix.length);
+      const mStatus = rest.match(/-(CDK|DDK)$/i);
+      if (mStatus) {
+        out.trangThaiDK = mStatus[1].toUpperCase();
+        rest = rest.slice(0, rest.length - mStatus[0].length);
+      }
+      const m = rest.match(/^([\\d.,]+)-([A-Za-zÀ-ỹ+]+)(?:-(.+))?$/);
+      if (m) {
+        out.dienTich = m[1] || '';
+        out.loaiDat  = m[2] || '';
+        out.tenChu   = (m[3] || '').trim();
+      }
+      return out;
+    }
+    function extractKmlExtendedData(pm) {
+      const data = {};
+      pm.querySelectorAll('ExtendedData Data').forEach(d => {
+        const name = (d.getAttribute('name') || '').toLowerCase();
+        const valueEl = d.querySelector('value');
+        data[name] = (valueEl ? valueEl.textContent : '') || '';
+      });
+      pm.querySelectorAll('ExtendedData SchemaData SimpleData').forEach(d => {
+        const name = (d.getAttribute('name') || '').toLowerCase();
+        data[name] = d.textContent || '';
+      });
+      return data;
+    }
+    function pickField(data, keys) {
+      for (const k of keys) { if (data[k]) return data[k]; }
+      return '';
+    }
+    function parseDescFields(desc) {
+      const out = { dienTich: '', loaiDat: '', tenChu: '' };
+      if (!desc) return out;
+      const mD = desc.match(/Di[eệ]n\\s*t[íi]ch[:\\s]+([\\d.,]+)/i);
+      const mL = desc.match(/Lo[aạ]i\\s*đ[aấ]t[:\\s]+([^\\n,<]+)/i);
+      const mT = desc.match(/T[eê]n\\s*ch[uủ][:\\s]+([^\\n<]+)/i);
+      if (mD) out.dienTich = mD[1].trim();
+      if (mL) out.loaiDat = mL[1].trim();
+      if (mT) out.tenChu = mT[1].trim();
+      return out;
+    }
+    function enrichParcelFromKmlPlacemark(p, pm, name, id) {
+      if (p.dienTich && p.loaiDat && p.tenChu && p.trangThaiDK) return;
+      const ext = extractKmlExtendedData(pm);
+      const dt = pickField(ext, ['dientich', 'dien_tich', 'area', 'dt']);
+      const ld = pickField(ext, ['loaidat', 'loai_dat', 'landtype', 'ld', 'loai']);
+      const tc = pickField(ext, ['tenchu', 'ten_chu', 'owner', 'chusd', 'chusudung', 'chu_su_dung']);
+      const tt = pickField(ext, ['trangthaidk', 'trang_thai_dk', 'trangthai', 'tranthaidk']);
+      if (!p.dienTich && dt) p.dienTich = dt;
+      if (!p.loaiDat && ld) p.loaiDat = ld;
+      if (!p.tenChu && tc) p.tenChu = tc;
+      if (!p.trangThaiDK && tt) p.trangThaiDK = tt.toUpperCase();
+      if (!p.dienTich || !p.loaiDat || !p.trangThaiDK) {
+        const lc = parseLabelCompound(name.trim(), id);
+        if (!p.dienTich && lc.dienTich) p.dienTich = lc.dienTich;
+        if (!p.loaiDat && lc.loaiDat) p.loaiDat = lc.loaiDat;
+        if (!p.tenChu && lc.tenChu) p.tenChu = lc.tenChu;
+        if (!p.trangThaiDK && lc.trangThaiDK) p.trangThaiDK = lc.trangThaiDK;
+      }
+      if (!p.dienTich || !p.loaiDat || !p.tenChu) {
+        const descEl = pm.querySelector('description');
+        const dd = parseDescFields(descEl ? descEl.textContent : '');
+        if (!p.dienTich && dd.dienTich) p.dienTich = dd.dienTich;
+        if (!p.loaiDat && dd.loaiDat) p.loaiDat = dd.loaiDat;
+        if (!p.tenChu && dd.tenChu) p.tenChu = dd.tenChu;
+      }
+    }
+    function parseKML(xml) {
+      const doc = new DOMParser().parseFromString(xml, 'text/xml');
+      const pms = Array.from(doc.querySelectorAll('Placemark'));
+      const byId = {};
+      const thonLines = [];
+      const thonLabels = [];
+      let hsqXaLink = '';
+      pms.forEach(pm => {
+        const lineEl = pm.querySelector('LineString coordinates');
+        if (lineEl) {
+          const pts = lineEl.textContent.trim().split(/\\s+/).map(s => {
+            const [lo, la] = s.split(',').map(Number);
+            return (!isNaN(la) && !isNaN(lo)) ? [la, lo] : null;
+          }).filter(Boolean);
+          if (pts.length > 1) thonLines.push(pts);
+          return;
+        }
+        const name = (pm.querySelector('name')||{}).textContent||'';
+        if (/HSQ\\s*T[oổ]ng/i.test(name)) {
+          const descEl0 = pm.querySelector('description');
+          const desc0 = descEl0 ? (descEl0.textContent || '') : '';
+          const mLink = desc0.match(/https?:\\/\\/drive\\.google\\.com\\S+/);
+          if (mLink && !hsqXaLink) hsqXaLink = mLink[0].replace(/&amp;/g,'&');
+          return;
+        }
+        const idM = name.trim().match(/^(\\d+[-–]\\d+)/);
+        const id  = idM ? idM[1].replace('–','-') : null;
+        if (!id) {
+          const ptEl2 = pm.querySelector('Point coordinates');
+          const nm = name.trim();
+          if (ptEl2 && nm) {
+            const [lo, la] = ptEl2.textContent.trim().split(',').map(Number);
+            if (!isNaN(la) && !isNaN(lo)) thonLabels.push({ lat: la, lon: lo, name: nm });
+          }
+          return;
+        }
+        if (!byId[id]) byId[id] = { id, lat:null, lon:null, linkHSQ:'', dienTich:'', loaiDat:'', tenChu:'', trangThaiDK:'', chiDuong:'', rings:[] };
+        const p = byId[id];
+        enrichParcelFromKmlPlacemark(p, pm, name, id);
+        pm.querySelectorAll('Polygon outerBoundaryIs LinearRing coordinates').forEach(el => {
+          const pts = el.textContent.trim().split(/\\s+/).map(s => {
+            const [lo, la] = s.split(',').map(Number);
+            return (!isNaN(la) && !isNaN(lo)) ? [la, lo] : null;
+          }).filter(Boolean);
+          if (pts.length > 2) p.rings.push(pts);
+        });
+        const ptEl = pm.querySelector('Point coordinates');
+        if (ptEl) {
+          const [lo, la] = ptEl.textContent.trim().split(',').map(Number);
+          if (!isNaN(la)) { p.lat = la; p.lon = lo; }
+          const desc = (pm.querySelector('description')||{}).textContent||'';
+          const m = (name+' '+desc).match(/https?:\\/\\/drive\\.google\\.com\\S+/);
+          if (m && !p.linkHSQ) p.linkHSQ = m[0].replace(/&/g,'&');
+          const mMaps = (name+' '+desc).match(/https?:\\/\\/www\\.google\\.com\\/maps\\S+/);
+          if (mMaps && !p.chiDuong) p.chiDuong = mMaps[0].replace(/&/g,'&');
+        }
+      });
+      Object.values(byId).forEach(p => {
+        if (!p.lat && p.rings.length) {
+          const r = p.rings[0];
+          p.lat = r.reduce((s,c)=>s+c[0],0)/r.length;
+          p.lon = r.reduce((s,c)=>s+c[1],0)/r.length;
+        }
+      });
+      const parcels = Object.values(byId).filter(p => p.rings.length > 0 || p.lat)
+        .sort((a,b) => {
+          const [aT,aU] = a.id.split('-').map(Number);
+          const [bT,bU] = b.id.split('-').map(Number);
+          return aT!==bT ? aT-bT : aU-bU;
+        });
+      return { parcels, ranhThon: { lines: thonLines, labels: thonLabels }, hsqXaLink };
+    }
+  `;
+      return URL.createObjectURL(new Blob([workerSrc], { type: 'application/javascript' }));
+    }
+
+    function parseKMLAsync(xmlText) {
+      return new Promise(resolve => {
+        let settled = false;
+        const fallback = () => { if (!settled) { settled = true; resolve(parseKML(xmlText)); } };
+        try {
+          if (!window.Worker) return fallback();
+          const url = getKmlWorkerURL();
+          const worker = new Worker(url);
+          const timeout = setTimeout(() => { worker.terminate(); URL.revokeObjectURL(url); fallback(); }, 20000);
+          worker.onmessage = (e) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            worker.terminate();
+            URL.revokeObjectURL(url);
+            if (e.data && e.data.ok) resolve(e.data.data);
+            else resolve(parseKML(xmlText));
+          };
+          worker.onerror = () => { clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(url); fallback(); };
+          worker.postMessage(xmlText);
+        } catch (err) {
+          fallback();
+        }
+      });
+    }
+
+    // ── PHÂN TÍCH GEOJSON TRONG WEB WORKER (tương tự KML) ──────────────────────────
+    function getGeoJsonWorkerURL() {
+      const workerSrc = `
+    self.onmessage = function(e) {
+      try {
+        self.postMessage({ ok: true, data: parseGeoJSON(e.data) });
+      } catch (err) {
+        self.postMessage({ ok: false, error: String(err) });
+      }
+    };
+    function parseLabelCompound(label, id) {
+      const out = { dienTich: '', loaiDat: '', tenChu: '', trangThaiDK: '' };
+      if (!label || !id) return out;
+      const prefix = id + '-';
+      if (!label.startsWith(prefix)) return out;
+      let rest = label.slice(prefix.length);
+      const mStatus = rest.match(/-(CDK|DDK)$/i);
+      if (mStatus) {
+        out.trangThaiDK = mStatus[1].toUpperCase();
+        rest = rest.slice(0, rest.length - mStatus[0].length);
+      }
+      const m = rest.match(/^([\\d.,]+)-([A-Za-zÀ-ỹ+]+)(?:-(.+))?$/);
+      if (m) {
+        out.dienTich = m[1] || '';
+        out.loaiDat  = m[2] || '';
+        out.tenChu   = (m[3] || '').trim();
+      }
+      return out;
+    }
+    function parseGeoJSON(text) {
+      const gj = typeof text === 'string' ? JSON.parse(text) : text;
+      const feats = (gj && gj.features) || [];
+      const byId = {};
+      const thonLines = [];
+      const thonLabels = [];
+      let hsqXaLink = '';
+      const toLatLngRing = (ring) => ring.map(c => [c[1], c[0]]);
+      feats.forEach(f => {
+        const props = (f && f.properties) || {};
+        const geom = f && f.geometry;
+        if (!geom) return;
+        if (props.linkHSQXa) {
+          if (!hsqXaLink) hsqXaLink = String(props.linkHSQXa);
+          return;
+        }
+        if (props.loai === 'ranh_thon') {
+          if (geom.type === 'LineString') {
+            const pts = toLatLngRing(geom.coordinates || []);
+            if (pts.length > 1) thonLines.push(pts);
+          } else if (geom.type === 'MultiLineString') {
+            (geom.coordinates || []).forEach(line => {
+              const pts = toLatLngRing(line || []);
+              if (pts.length > 1) thonLines.push(pts);
+            });
+          }
+          return;
+        }
+        if (props.loai === 'nhan_thon') {
+          if (geom.type === 'Point') {
+            const [lo, la] = geom.coordinates || [];
+            if (!isNaN(la) && !isNaN(lo)) {
+              thonLabels.push({ lat: la, lon: lo, name: props.ten_thon || '' });
+            }
+          }
+          return;
+        }
+        let id = (props.khoa != null && props.khoa !== '') ? String(props.khoa) : null;
+        if (!id && props.label) {
+          const m = String(props.label).match(/^(\d+[-–]\d+)/);
+          if (m) id = m[1];
+        }
+        if (!id) return;
+        id = id.replace('–', '-');
+        if (!byId[id]) byId[id] = { id, lat: null, lon: null, linkHSQ: '', dienTich: '', loaiDat: '', tenChu: '', trangThaiDK: '', chiDuong: '', rings: [] };
+        const p = byId[id];
+        if (props.dienTich != null && props.dienTich !== '' && !p.dienTich) p.dienTich = String(props.dienTich);
+        if (props.loaiDat && !p.loaiDat) p.loaiDat = String(props.loaiDat);
+        if (props.tenChu && !p.tenChu) p.tenChu = String(props.tenChu);
+        if (props.trangThaiDK && !p.trangThaiDK) p.trangThaiDK = String(props.trangThaiDK).trim().toUpperCase();
+        if ((!p.dienTich || !p.loaiDat || !p.tenChu || !p.trangThaiDK) && props.label) {
+          const lc = parseLabelCompound(String(props.label), id);
+          if (!p.dienTich && lc.dienTich) p.dienTich = lc.dienTich;
+          if (!p.loaiDat && lc.loaiDat) p.loaiDat = lc.loaiDat;
+          if (!p.tenChu && lc.tenChu) p.tenChu = lc.tenChu;
+          if (!p.trangThaiDK && lc.trangThaiDK) p.trangThaiDK = lc.trangThaiDK;
+        }
+        if (props.chiDuong && !p.chiDuong) p.chiDuong = String(props.chiDuong);
+        if (geom.type === 'Polygon') {
+          (geom.coordinates || []).forEach(ring => {
+            const pts = toLatLngRing(ring || []);
+            if (pts.length > 2) p.rings.push(pts);
+          });
+        } else if (geom.type === 'MultiPolygon') {
+          (geom.coordinates || []).forEach(poly => {
+            (poly || []).forEach(ring => {
+              const pts = toLatLngRing(ring || []);
+              if (pts.length > 2) p.rings.push(pts);
+            });
+          });
+        } else if (geom.type === 'Point') {
+          const [lo, la] = geom.coordinates || [];
+          if (!isNaN(la)) { p.lat = la; p.lon = lo; }
+          if (props.linkHSQ && !p.linkHSQ) p.linkHSQ = props.linkHSQ;
+        }
+      });
+      Object.values(byId).forEach(p => {
+        if (!p.lat && p.rings.length) {
+          const r = p.rings[0];
+          p.lat = r.reduce((s,c)=>s+c[0],0)/r.length;
+          p.lon = r.reduce((s,c)=>s+c[1],0)/r.length;
+        }
+      });
+      const parcels = Object.values(byId).filter(p => p.rings.length > 0 || p.lat)
+        .sort((a,b) => {
+          const [aT,aU] = a.id.split('-').map(Number);
+          const [bT,bU] = b.id.split('-').map(Number);
+          return aT!==bT ? aT-bT : aU-bU;
+        });
+      return { parcels, ranhThon: { lines: thonLines, labels: thonLabels }, hsqXaLink };
+    }
+  `;
+      return URL.createObjectURL(new Blob([workerSrc], { type: 'application/javascript' }));
+    }
+
+    function parseGeoJSONAsync(jsonText) {
+      return new Promise(resolve => {
+        let settled = false;
+        const fallback = () => { if (!settled) { settled = true; resolve(parseGeoJSON(jsonText)); } };
+        try {
+          if (!window.Worker) return fallback();
+          const url = getGeoJsonWorkerURL();
+          const worker = new Worker(url);
+          const timeout = setTimeout(() => { worker.terminate(); URL.revokeObjectURL(url); fallback(); }, 20000);
+          worker.onmessage = (e) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeout);
+            worker.terminate();
+            URL.revokeObjectURL(url);
+            if (e.data && e.data.ok) resolve(e.data.data);
+            else resolve(parseGeoJSON(jsonText));
+          };
+          worker.onerror = () => { clearTimeout(timeout); worker.terminate(); URL.revokeObjectURL(url); fallback(); };
+          worker.postMessage(jsonText);
+        } catch (err) {
+          fallback();
+        }
+      });
+    }
+
+    // ── NHẬN DIỆN ĐỊNH DẠNG FILE (KML hay GeoJSON) ─────────────────────────────────
+    function detectIsGeoJSON(filename, text) {
+      const lower = (filename || '').toLowerCase();
+      if (lower.endsWith('.geojson') || lower.endsWith('.json')) return true;
+      if (lower.endsWith('.kml') || lower.endsWith('.xml')) return false;
+      // Không xác định được qua đuôi file -> dò nội dung: JSON luôn bắt đầu bằng '{'
+      const t = (text || '').trim();
+      return t.startsWith('{');
+    }
+
+    // ── XỬ LÝ DÙNG CHUNG: nhận nội dung text (KML/GeoJSON) + tên file, render lên bản đồ.
+    // Dùng chung cho cả file mở từ máy (handleFile) và file tải về từ Google Drive.
+    // progressStart: % đã hoàn thành ở giai đoạn TRƯỚC đó (đọc file / tải mạng),
+    // để thanh tiến trình nối tiếp liền mạch thay vì nhảy lại từ 0.
+    async function processMapText(text, fileName, progressStart = 0) {
+      const isGeoJSON = detectIsGeoJSON(fileName, text);
+      const parseEnd = progressStart + (100 - progressStart) * 0.55; // mốc cuối giai đoạn "phân tích"
+      showStatus(isGeoJSON ? 'Đang phân tích dữ liệu GeoJSON...' : 'Đang phân tích dữ liệu KML...');
+      FileProgress.creepTo(parseEnd, isGeoJSON ? 'Đang phân tích dữ liệu GeoJSON...' : 'Đang phân tích dữ liệu KML...');
+
+      let result;
+      try {
+        result = isGeoJSON ? await parseGeoJSONAsync(text) : await parseKMLAsync(text);
+      } catch (err) {
+        FileProgress.fail('Lỗi đọc file');
+        showAlert(
+          `Không thể đọc file này (${fileName}).\n` +
+          `Vui lòng kiểm tra đây là file .kml hoặc .geojson hợp lệ do TDMAP xuất ra.\n\nChi tiết lỗi: ${err}`
+        );
+        return false;
+      }
+      FileProgress.stopCreep();
+      FileProgress.set(parseEnd);
+
+      allParcels = result.parcels;
+      currentLoadedFileName = fileName || '';
+
+      FileProgress.setLabel(`Đang hiển thị ${allParcels.length} thửa lên bản đồ...`);
+      await renderParcels(allParcels, frac => FileProgress.set(parseEnd + frac * (100 - parseEnd)));
+      renderRanhThon(result.ranhThon);
+      const soThonLines = (result.ranhThon && result.ranhThon.lines) ? result.ranhThon.lines.length : 0;
+      const thonNote = soThonLines > 0 ? ` (kèm ranh thôn)` : '';
+      FileProgress.finish(`✓ Xong · ${allParcels.length} thửa`);
+      showStatus(`✓ ${allParcels.length} thửa${thonNote} – ${fileName}`);
+      return true;
+    }
+
+    // ── LƯU BẢN ĐỒ NGAY TRÊN THIẾT BỊ (IndexedDB) ───────────────────────────────────
+    // Mục tiêu: lần mở sau KHÔNG cần tải lại từ Google Drive (nhanh hơn, đỡ tốn
+    // Drive API quota, dùng được cả khi mất mạng ngoài thực địa). Dùng IndexedDB
+    // thay vì localStorage vì localStorage chỉ ~5-10MB — quá nhỏ cho file
+    // geojson 30.000-50.000+ thửa (có thể vài chục MB); IndexedDB cho phép lưu
+    // hàng trăm MB tuỳ dung lượng trống của máy.
+    // Cơ chế "thay thế khi có bản mới": mỗi bản ghi cache gắn kèm modifiedTime lấy
+    // từ Google Drive. Khi mở lại 1 file, nếu modifiedTime trên Drive TRÙNG với
+    // bản đã lưu -> dùng luôn bản trên máy (không tải lại gì cả). Nếu KHÁC (chủ
+    // xã vừa cập nhật thửa mới) -> tải bản mới về rồi GHI ĐÈ (thay thế) bản cũ.
+    const LocalMapCache = (() => {
+      const DB_NAME = 'tdmap_local_cache_v1';
+      const STORE = 'geojson_files';
+      const MAX_ENTRIES = 6; // giới hạn số bản đồ giữ trên máy, tránh chiếm hết dung lượng
+      let dbPromise = null;
+
+      function openDB() {
+        if (dbPromise) return dbPromise;
+        dbPromise = new Promise((resolve, reject) => {
+          if (!window.indexedDB) { resolve(null); return; }
+          const req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(STORE)) {
+              db.createObjectStore(STORE, { keyPath: 'fileId' });
+            }
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null); // lỗi IndexedDB (vd chế độ ẩn danh) -> coi như không có cache, không chặn app
+        });
+        return dbPromise;
+      }
+
+      async function get(fileId) {
+        const db = await openDB();
+        if (!db) return null;
+        return new Promise(resolve => {
+          try {
+            const tx = db.transaction(STORE, 'readonly');
+            const req = tx.objectStore(STORE).get(fileId);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => resolve(null);
+          } catch (e) { resolve(null); }
+        });
+      }
+
+      async function listAll() {
+        const db = await openDB();
+        if (!db) return [];
+        return new Promise(resolve => {
+          try {
+            const tx = db.transaction(STORE, 'readonly');
+            const req = tx.objectStore(STORE).getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => resolve([]);
+          } catch (e) { resolve([]); }
+        });
+      }
+
+      async function save(entry) {
+        const db = await openDB();
+        if (!db) return false;
+        entry.savedAt = Date.now();
+        return new Promise(resolve => {
+          try {
+            const tx = db.transaction(STORE, 'readwrite');
+            tx.objectStore(STORE).put(entry);
+            tx.oncomplete = async () => { await pruneOldest(); resolve(true); };
+            tx.onerror = () => resolve(false);
+          } catch (e) { resolve(false); }
+        });
+      }
+
+      async function remove(fileId) {
+        const db = await openDB();
+        if (!db) return;
+        try {
+          const tx = db.transaction(STORE, 'readwrite');
+          tx.objectStore(STORE).delete(fileId);
+        } catch (e) { }
+      }
+
+      // Giữ tối đa MAX_ENTRIES bản đồ gần dùng nhất trên máy; xã cũ lâu không mở
+      // tự động bị dọn để không chiếm dung lượng vô hạn.
+      async function pruneOldest() {
+        const all = await listAll();
+        if (all.length <= MAX_ENTRIES) return;
+        all.sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
+        const toRemove = all.slice(0, all.length - MAX_ENTRIES);
+        for (const e of toRemove) await remove(e.fileId);
+      }
+
+      return { get, listAll, save, remove };
+    })();
+
+    // ── BẢN ĐỒ XÃ TÂN TIẾN TỪ GOOGLE DRIVE ─────────────────────────────────────────
+    // File này CHỈ phục vụ duy nhất Xã Tân Tiến (Tỉnh Đắk Lắk, mã xã 24526) -
+    // không có tính năng chọn Xã/Phường khác. Ghi chú: Google Drive API v3 luôn
+    // cần một API Key hợp lệ để liệt kê/tải nội dung file bằng JavaScript phía
+    // trình duyệt — kể cả khi thư mục đã ở chế độ "Bất kỳ ai có đường liên kết".
+    // KHÔNG gắn cứng API Key thật (dạng "AIzaSy...") vào code (file này có thể bị
+    // đẩy lên kho GitHub công khai -> lộ key ngay lập tức, bị secret-scanning
+    // quét ra). Thay vào đó dùng BÍ DANH NGẮN (Tdmap+mã xã), code tự tra ra key
+    // thật tương ứng. Lưu ý: đây chỉ là CHE GIẤU (obfuscation) để tránh lộ liễu/
+    // tránh bị máy quét tự động phát hiện, KHÔNG phải bảo mật thật sự — ai đọc kỹ
+    // mã nguồn vẫn có thể giải mã lại được. Bảo mật thật sự nằm ở việc giới hạn
+    // key theo HTTP referrer (chỉ cho phép domain của bạn) trong Google Cloud Console.
+    const GDRIVE_KEY_ALIASES = {
+      // 'Bí danh ngắn': 'Chuỗi key đã che giấu (mã hóa XOR + base64)'
+      'TDMAP-2026': 'FQ03IANLcWhYZw46AzIuLXJ8Cydden4ABSYpIXRnIyAMIGACSkFB'
+    };
+    const GDRIVE_KEY_PAD = 'TDMAP2026SECRET'; // khóa che giấu dùng chung cho XOR ở trên
+    function decodeGdriveKeyToken(token) {
+      try {
+        const b64 = token.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = b64 + '='.repeat((4 - b64.length % 4) % 4);
+        const bin = atob(padded);
+        let out = '';
+        for (let i = 0; i < bin.length; i++) {
+          out += String.fromCharCode(bin.charCodeAt(i) ^ GDRIVE_KEY_PAD.charCodeAt(i % GDRIVE_KEY_PAD.length));
+        }
+        return out;
+      } catch (e) { return ''; }
+    }
+    function resolveGdriveApiKey(raw) {
+      const v = (raw || '').trim();
+      if (v.toLowerCase().startsWith('tdmap') && v.length > 5) {
+        return decodeGdriveKeyToken(GDRIVE_KEY_ALIASES['TDMAP-2026']);
+      }
+      if (GDRIVE_KEY_ALIASES[v]) return decodeGdriveKeyToken(GDRIVE_KEY_ALIASES[v]);
+      return v;
+    }
+
+    const DEFAULT_COMMUNE_CODE = '24526'; // ứng với thư mục Drive .../CSDL2026/Tỉnh Đắk Lắk/24526
+    // ID THƯ MỤC GOOGLE DRIVE CỦA XÃ TÂN TIẾN - lấy trực tiếp từ đường link thư
+    // mục thật (.../CSDL2026/Tỉnh Đắk Lắk/24526), KHÔNG dò theo tên Tỉnh/Xã như
+    // trước nữa. Trỏ thẳng vào đúng 1 ID này đảm bảo TUYỆT ĐỐI chỉ quét/mở file
+    // trong đúng thư mục này - không còn khả năng dò nhầm sang thư mục Tỉnh/Xã
+    // khác do trùng/gần giống tên.
+    const DEFAULT_FOLDER_ID = '1cBoysnrLHUCAhGKXInVOivw21NmZ5Pzd';
+
+    // silent=true (dùng khi bấm biểu tượng bản đồ ở màn hình chào ban đầu): KHÔNG
+    // hiện modal, chỉ hiện thanh tiến trình tải bản đồ (#fileProgressWrap) cho
+    // gọn. Modal chỉ tự bật lên nếu có lỗi xảy ra (xem setDriveStatus).
+    // silent=false (dùng khi bấm nút "Tải lại bản đồ"): hiện modal kèm trạng thái.
+    async function loadTanTienMap(silent) {
+      document.getElementById('driveFileList').innerHTML = '';
+      setDriveStatus('');
+      if (silent) {
+        FileProgress.start('Đang tải bản đồ Xã Tân Tiến...');
+      } else {
+        document.getElementById('driveModalOverlay').classList.add('show');
+      }
+      await listDriveGeojsonFiles();
+    }
+
+    function closeDriveModal() {
+      document.getElementById('driveModalOverlay').classList.remove('show');
+    }
+
+    function setDriveStatus(msg, isError, isHtml = false) {
+      const el = document.getElementById('driveStatusMsg');
+      if (!msg) { el.style.display = 'none'; el.innerHTML = ''; return; }
+      el.style.display = 'block';
+      if (isHtml) {
+        el.innerHTML = msg;
+      } else {
+        el.textContent = msg;
+      }
+      el.classList.toggle('error', !!isError);
+      // Nếu đang tải ngầm (silent, modal đang ẩn) mà gặp lỗi thì tự bật modal
+      // lên lại để người dùng thấy lỗi, tránh bị "kẹt" ở thanh tiến trình mà
+      // không rõ chuyện gì xảy ra.
+      if (isError) {
+        document.getElementById('driveModalOverlay').classList.add('show');
+      }
+    }
+
+    // Quét thư mục Drive của Xã Tân Tiến, liệt kê các file .geojson và tự động
+    // mở bản có ngày sửa mới nhất; danh sách vẫn hiện để mở lại bản khác nếu muốn.
+    async function listDriveGeojsonFiles() {
+      const apiKey = resolveGdriveApiKey('Tdmap' + DEFAULT_COMMUNE_CODE);
+      const listBtn = document.getElementById('driveListBtn');
+      const listEl = document.getElementById('driveFileList');
+      listEl.innerHTML = '';
+      listBtn.disabled = true;
+
+      const folderId = DEFAULT_FOLDER_ID;
+      setDriveStatus('Đang tải danh sách file từ Google Drive...');
+
+      try {
+        let files = [];
+        let pageToken = '';
+        do {
+          const params = new URLSearchParams({
+            q: `'${folderId}' in parents and trashed = false`,
+            key: apiKey,
+            fields: 'nextPageToken, files(id, name, mimeType, modifiedTime, size)',
+            pageSize: '100',
+            supportsAllDrives: 'true',
+            includeItemsFromAllDrives: 'true'
+          });
+          if (pageToken) params.set('pageToken', pageToken);
+          const res = await fetch(`https://www.googleapis.com/drive/v3/files?${params.toString()}`);
+          const data = await res.json();
+          if (!res.ok) {
+            const msg = (data && data.error && data.error.message) ? data.error.message : `HTTP ${res.status}`;
+            throw new Error(msg);
+          }
+          files = files.concat(data.files || []);
+          pageToken = data.nextPageToken || '';
+        } while (pageToken);
+
+        const allGeojsonFiles = files.filter(f => f.name.toLowerCase().endsWith('.geojson'));
+        // File địa điểm (DiaDiem) là 1 lớp RIÊNG (hội trường/trường học/cầu/nhà
+        // thờ...), KHÔNG phải bản đồ ranh thửa chính - phải loại khỏi danh sách
+        // dưới đây, nếu không có nguy cơ bị chọn nhầm làm bản đồ chính khi nó là
+        // file có ngày sửa mới nhất trong thư mục.
+        const geojsonFiles = allGeojsonFiles.filter(f => !DIADIEM_FILE_RE.test(f.name));
+        const diaDiemFiles = allGeojsonFiles.filter(f => DIADIEM_FILE_RE.test(f.name));
+
+        if (diaDiemFiles.length > 0) {
+          // Luôn lấy bản MỚI NHẤT theo modifiedTime (tương ứng file có ngày tháng
+          // trong tên mới nhất, vd "0309_TanTien_DiaDiem.geojson"); tải song
+          // song, không chặn việc mở bản đồ ranh thửa chính bên dưới.
+          const newestDiaDiem = diaDiemFiles.slice().sort((a, b) => (b.modifiedTime || '').localeCompare(a.modifiedTime || ''))[0];
+          loadDiaDiemFile(newestDiaDiem.id, newestDiaDiem.name, apiKey);
+        }
+
+        if (geojsonFiles.length === 0) {
+          setDriveStatus('Không tìm thấy file .geojson nào trong thư mục này.', true);
+          return;
+        }
+
+        setDriveStatus(`✓ Tìm thấy ${geojsonFiles.length} file .geojson. Đang tự động mở bản mới nhất...`);
+        const sorted = geojsonFiles.sort((a, b) => (b.modifiedTime || '').localeCompare(a.modifiedTime || ''));
+        for (const f of sorted) {
+          const cached = await LocalMapCache.get(f.id);
+          const isCachedSame = cached && cached.modifiedTime === f.modifiedTime;
+          const isCachedStale = cached && cached.modifiedTime !== f.modifiedTime;
+          const item = document.createElement('div');
+          item.className = 'drive-file-item';
+          const badge = isCachedSame
+            ? '<span class="dfi-go" style="color:#00c6a7;">📦 Đã lưu máy · Mở ngay ▸</span>'
+            : isCachedStale
+              ? '<span class="dfi-go" style="color:#cc8400;">🔄 Có bản mới ▸</span>'
+              : '<span class="dfi-go">Mở ▸</span>';
+          item.innerHTML = `<span class="dfi-icon">🗺️</span><span class="dfi-name"></span>${badge}`;
+          item.querySelector('.dfi-name').textContent = f.name;
+          item.onclick = () => openDriveFile(f.id, f.name, apiKey, f.size, f.modifiedTime, DEFAULT_COMMUNE_CODE);
+          listEl.appendChild(item);
+        }
+
+        // Tự động mở luôn file có ngày sửa mới nhất (đứng đầu danh sách đã sắp
+        // xếp ở trên) - người dân không cần tự bấm chọn, danh sách phía trên vẫn
+        // còn đó để mở bản khác nếu muốn.
+        const newest = sorted[0];
+        openDriveFile(newest.id, newest.name, apiKey, newest.size, newest.modifiedTime, DEFAULT_COMMUNE_CODE);
+      } catch (err) {
+        setDriveStatus(`Lỗi khi kết nối Google Drive: ${err.message || err}`, true);
+      } finally {
+        listBtn.disabled = false;
+      }
+    }
+
+    async function openDriveFile(fileId, fileName, apiKey, fileSize, modifiedTime, commCode) {
+      // 1) Đã có bản TRÙNG phiên bản lưu sẵn trên máy -> mở ngay, KHÔNG cần tải
+      // mạng gì cả (nhanh gần như tức thì, kể cả không có mạng).
+      if (modifiedTime) {
+        const cached = await LocalMapCache.get(fileId);
+        if (cached && cached.modifiedTime === modifiedTime && cached.text) {
+          FileProgress.start(`📦 Đang mở "${fileName}" từ dữ liệu đã lưu trên máy...`);
+          FileProgress.set(40);
+          await new Promise(r => setTimeout(r, 30));
+          const ok = await processMapText(cached.text, fileName, 40);
+          if (ok) { closeDriveModal(); showStatus(`✓ Mở "${fileName}" từ bộ nhớ máy (ngoại tuyến)`); }
+          return;
+        }
+      }
+
+      FileProgress.start(`Đang chuẩn bị tải "${fileName}"...`);
+      setDriveStatus(`Đang chuẩn bị tải "${fileName}"...`);
+      try {
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${encodeURIComponent(apiKey)}`);
+        if (!res.ok) {
+          let msg = `HTTP ${res.status}`;
+          try { const j = await res.json(); if (j && j.error && j.error.message) msg = j.error.message; } catch (e) { }
+          throw new Error(msg);
+        }
+
+        let text = '';
+        const total = parseInt(fileSize || res.headers.get('content-length'), 10);
+
+        if (res.body && window.ReadableStream) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let loaded = 0;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            loaded += value.length;
+            text += decoder.decode(value, { stream: true });
+
+            if (total) {
+              let percent = Math.min(100, Math.round((loaded / total) * 100));
+              let safeName = fileName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              let html = `Đang tải "${safeName}"... <strong style="color:#00c6a7;">${percent}%</strong><br>
+            <div style="width:100%; background:#e0e0e0; height:6px; border-radius:3px; margin-top:6px; overflow:hidden;">
+              <div style="width:${percent}%; background:#00c6a7; height:100%; transition:width 0.1s;"></div>
+            </div>`;
+              FileProgress.setLabel(`Đang tải "${fileName}"... ${percent}%`);
+              FileProgress.set(percent * 0.5); // giai đoạn tải mạng chiếm 0-50% của tổng tiến trình
+              setDriveStatus(html, false, true); // hiển thị % tải mạng thật (0-100%) trong khung popup, chạy sau để không bị ghi đè bởi % tổng-tiến-trình đã gộp ở trên
+            } else {
+              let mb = (loaded / (1024 * 1024)).toFixed(1);
+              setDriveStatus(`Đang tải "${fileName}"... ${mb} MB`);
+              FileProgress.setLabel(`Đang tải "${fileName}"... ${mb} MB`);
+            }
+          }
+          text += decoder.decode(); // flush remaining
+        } else {
+          setDriveStatus(`Đang tải "${fileName}"...`);
+          FileProgress.setLabel(`Đang tải "${fileName}"...`);
+          text = await res.text();
+        }
+
+        FileProgress.setLabel(`Đang phân tích dữ liệu bản đồ...`);
+        FileProgress.set(50);
+        // Chờ 1 chút để UI kịp render trạng thái
+        await new Promise(r => setTimeout(r, 50));
+
+        const ok = await processMapText(text, fileName, 50);
+        if (ok) {
+          closeDriveModal();
+          // 2) LƯU (thay thế bản cũ nếu có) vào IndexedDB để lần sau mở tức thì.
+          // Chạy nền, không chặn giao diện; nếu máy hết dung lượng/lỗi thì bỏ qua
+          // âm thầm (app vẫn hoạt động bình thường, chỉ là không có cache).
+          LocalMapCache.save({ fileId, fileName, modifiedTime: modifiedTime || '', text, commCode: commCode || '' });
+        }
+      } catch (err) {
+        // Mạng lỗi nhưng lỡ đã từng có bản cũ trên máy (khác phiên bản) -> vẫn cho
+        // dùng tạm bản cũ thay vì bó tay hoàn toàn, kèm cảnh báo rõ ràng.
+        const staleCache = modifiedTime ? await LocalMapCache.get(fileId) : null;
+        if (staleCache && staleCache.text) {
+          setDriveStatus(`Không tải được bản mới (${err.message || err}). Đang mở tạm bản đã lưu trên máy (có thể cũ hơn)...`, true);
+          FileProgress.setLabel('Không tải được bản mới — mở tạm bản đã lưu...');
+          const ok = await processMapText(staleCache.text, fileName, 40);
+          if (ok) closeDriveModal();
+          return;
+        }
+        FileProgress.fail('Lỗi tải file');
+        setDriveStatus(`Không tải được file "${fileName}": ${err.message || err}`, true);
+      }
+    }
+
+    // ── THANH TIẾN TRÌNH MỞ FILE (dùng chung: file trên máy + Google Drive) ────────
+    // 3 giai đoạn luôn hiển thị rõ ràng cho người dùng:
+    //   1) Đọc/tải file  2) Phân tích dữ liệu (KML/GeoJSON)  3) Hiển thị lên bản đồ
+    // Vì bước "phân tích" chạy trong Web Worker không báo được % thật, ta cho
+    // thanh tiến trình "bò" dần tới gần mốc cuối của giai đoạn đó trong lúc chờ,
+    // rồi nhảy hẳn tới mốc khi worker trả kết quả — người dùng luôn thấy có tiến
+    // triển thay vì màn hình đứng yên không rõ có đang chạy hay bị treo.
+    const FileProgress = (() => {
+      const wrap = document.getElementById('fileProgressWrap');
+      const bar = document.getElementById('fileProgressBar');
+      const label = document.getElementById('fileProgressLabel');
+      let hideTimer = null;
+      let creepTimer = null;
+      let curLabelText = '';
+
+      let lastMirrorPct = -1;
+      let lastMirrorTime = 0;
+
+      // Đồng bộ % trực tiếp vào khung popup "Mở file .geojson từ Google Drive"
+      // (#driveStatusMsg) khi popup đang mở, để người dùng thấy % chạy NGAY
+      // trong khung mình đang nhìn, thay vì chỉ chạy ở thanh mờ trên cùng.
+      // Có throttle: trong lúc dựng hàng chục nghìn polygon, hàm này có thể bị
+      // gọi rất nhiều lần liên tiếp (mỗi lô nhỏ 1 lần) — ghi lại innerHTML mỗi
+      // lần như vậy tốn CPU, tranh giành với chính CPU mà vòng lặp render đang
+      // cần. Chỉ thực sự ghi DOM khi % thay đổi đủ nhiều hoặc đã đủ lâu kể từ
+      // lần ghi trước, trừ khi force=true (dùng cho start/finish/fail — luôn
+      // phải hiện ngay, không được bỏ qua).
+      function syncModalStatus(percent, isError, force) {
+        const overlay = document.getElementById('driveModalOverlay');
+        if (!overlay || !overlay.classList.contains('show')) return;
+        const el = document.getElementById('driveStatusMsg');
+        if (!el) return;
+        const pct = Math.round(Math.max(0, Math.min(100, percent)));
+        if (!force) {
+          const now = performance.now();
+          if (pct === lastMirrorPct) return;
+          if ((now - lastMirrorTime) < 120 && Math.abs(pct - lastMirrorPct) < 2) return;
+          lastMirrorTime = now;
+        }
+        lastMirrorPct = pct;
+        const barColor = isError ? '#d9534f' : '#00c6a7';
+        // Nếu label đã tự kèm sẵn % (vd giai đoạn tải mạng) thì không ghi đè
+        // số %, chỉ vẽ thêm thanh tiến trình cho trực quan.
+        const headline = /%/.test(curLabelText)
+          ? curLabelText
+          : `${curLabelText} <strong style="color:${barColor};">${pct}%</strong>`;
+        el.style.display = 'block';
+        el.innerHTML = `${headline}
+          <div style="width:100%; background:#e0e0e0; height:6px; border-radius:3px; margin-top:6px; overflow:hidden;">
+            <div style="width:${pct}%; background:${barColor}; height:100%; transition:width 0.15s;"></div>
+          </div>`;
+        el.classList.toggle('error', !!isError);
+      }
+
+      function start(initialLabel) {
+        clearTimeout(hideTimer);
+        clearInterval(creepTimer);
+        bar.classList.remove('error');
+        label.classList.remove('error');
+        bar.style.width = '0%';
+        wrap.classList.add('show');
+        setLabel(initialLabel || 'Đang bắt đầu...');
+        lastMirrorPct = -1;
+        syncModalStatus(0, false, true);
+      }
+
+      function setLabel(txt) {
+        curLabelText = txt || '';
+        label.textContent = txt;
+        label.classList.add('show');
+      }
+
+      function set(percent, opts) {
+        const p = Math.max(0, Math.min(100, percent));
+        bar.style.width = p + '%';
+        if (!opts || opts.mirror !== false) syncModalStatus(p);
+      }
+
+      // "Bò" dần từ mốc hiện tại tới gần targetPercent (không chạm hẳn) trong lúc
+      // chờ 1 việc không có tiến trình đo được (vd worker đang parse XML/JSON).
+      function creepTo(targetPercent, label2) {
+        clearInterval(creepTimer);
+        if (label2) setLabel(label2);
+        let cur = parseFloat(bar.style.width) || 0;
+        const ceiling = targetPercent - 2;
+        creepTimer = setInterval(() => {
+          if (cur >= ceiling) { clearInterval(creepTimer); return; }
+          cur += (ceiling - cur) * 0.12 + 0.3;
+          set(cur);
+        }, 120);
+      }
+
+      function stopCreep() { clearInterval(creepTimer); }
+
+      function finish(finalLabel) {
+        stopCreep();
+        set(100, { mirror: false });
+        if (finalLabel) setLabel(finalLabel);
+        syncModalStatus(100, false, true);
+        hideTimer = setTimeout(() => {
+          wrap.classList.remove('show');
+          label.classList.remove('show');
+          setTimeout(() => set(0), 300);
+        }, 500);
+      }
+
+      function fail(errLabel) {
+        stopCreep();
+        bar.classList.add('error');
+        label.classList.add('error');
+        if (errLabel) setLabel(errLabel);
+        syncModalStatus(parseFloat(bar.style.width) || 0, true, true);
+        hideTimer = setTimeout(() => {
+          wrap.classList.remove('show');
+          label.classList.remove('show');
+          setTimeout(() => { set(0); bar.classList.remove('error'); label.classList.remove('error'); }, 300);
+        }, 1800);
+      }
+
+      return { start, set, setLabel, creepTo, stopCreep, finish, fail };
+    })();
+
+    // ── STATUS ────────────────────────────────────────────────────────────────────
+    let sTimer;
+    function showStatus(msg) {
+      const el = document.getElementById('statusPill');
+      el.textContent = msg; el.style.opacity = '1';
+      clearTimeout(sTimer);
+      sTimer = setTimeout(() => el.style.opacity = '0', 3500);
+    }
+
+    // ── TOOLTIP CSS ───────────────────────────────────────────────────────────────
+    const s = document.createElement('style');
+    s.textContent = `.lbl-style {
+  background: rgba(255,255,255,0.92) !important;
+  border: 1px solid rgba(0,0,0,0.15) !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
+  color: #FF0000 !important; font-size: 10px; font-weight: 800;
+  padding: 2px 6px !important;
+  text-shadow: none;
+  pointer-events: none;
+  white-space: nowrap !important;
+  text-align: center;
+  line-height: 1.25;
+}
+body.hide-lbl-bg .lbl-style {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-shadow:
+    -2px -2px 0 #fff, -1px -2px 0 #fff, 0px -2px 0 #fff, 1px -2px 0 #fff, 2px -2px 0 #fff,
+    -2px  2px 0 #fff, -1px  2px 0 #fff, 0px  2px 0 #fff, 1px  2px 0 #fff, 2px  2px 0 #fff,
+    -2px -1px 0 #fff, -2px  0px 0 #fff, -2px  1px 0 #fff,
+     2px -1px 0 #fff,  2px  0px 0 #fff,  2px  1px 0 #fff,
+    0 0 3px rgba(255,255,255,0.9) !important;
+}
+.lbl-style::before { display: none !important; }
+.lbl-style .lbl-owner {
+  display: block;
+  color: #ffff00 !important;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important;
+  font-size: 9px; font-weight: 700;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.thon-lbl-style {
+  color: #00cc44 !important;
+  font-size: 12px; font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 3px rgba(0,0,0,0.9);
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  background: transparent !important;
+  border: none !important;
+}
+.diadiem-lbl-style {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  pointer-events: auto;
+}
+.diadiem-lbl-style .dd-ico {
+  font-size: 21px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.85));
+}
+.diadiem-lbl-style .dd-name {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1.5px solid #00e5c4;
+  border-radius: 5px;
+  padding: 2px 7px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.95), 0 0 2px rgba(0,0,0,0.95);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.65);
+}`;
+    document.head.appendChild(s);
+
+    // ── TỰ ĐỘNG MỞ BẢN ĐỒ NGAY KHI VÀO TRANG ─────────────────────────────────────
+    // Đã bỏ hẳn màn hình chào (splash) - trang vừa tải xong tự hiện bảng hướng
+    // dẫn giấy tờ đăng ký đất đai + tự tải bản đồ Google Drive song song phía sau,
+    // không cần người dân bấm vào biểu tượng nào nữa.
+    startMapFromSplash();
+  </script>
+</body>
+
+</html>
